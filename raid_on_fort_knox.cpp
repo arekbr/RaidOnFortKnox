@@ -5,6 +5,7 @@
 #include <cmath>    // std::sqrt
 #include <string>
 
+
 // ----------------- USTAWIENIA ------------------------ zmiana jakaś 
 
 // Rozmiar kafelka (tunel ma 1 kafelek szerokości)
@@ -24,9 +25,16 @@ const int GOLD_HEIGHT = 20;
 const int GOLD2_WIDTH  = 20;
 const int GOLD2_HEIGHT = 20;
 
-const int PANTER_WIDTH  = 20;
-const int PANTER_HEIGHT = 20;
+const int PANTHER_WIDTH  = 20;
+const int PANTHER_HEIGHT = 20;
 
+
+// pozycja pantery
+//float pantherX = 10.0f * CELL_SIZE;
+//float pantherY =  5.0f * CELL_SIZE;
+
+float pantherX = 10.0f * CELL_SIZE + (CELL_SIZE - PANTHER_WIDTH) / 2.0f;
+float pantherY =  6.0f * CELL_SIZE + (CELL_SIZE - PANTHER_HEIGHT)/ 2.0f;    
 
 // Rozmiar okna
 const int WINDOW_WIDTH  = 550;
@@ -43,6 +51,7 @@ const SDL_Color COLOR_LIVES  = { 255, 0,   0, 255 }; // Czerwony
 const SDL_Color COLOR_START  = { 255, 255, 0, 255 }; // Żółty
 const SDL_Color COLOR_GOLD   = { 255, 215, 0, 255 }; // Złoty
 const SDL_Color COLOR_GOLD2  = { 255, 115, 66,255 }; // Złoto "podwójne"
+const SDL_Color COLOR_PANTHER = { 255, 0, 0, 255 }; // Pantera
 
 // ----------------- POZYCJA GRACZA --------------------
 float posX, posY;          // Pozycja w pikselach (lewy górny róg)
@@ -76,6 +85,36 @@ static bool playerSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
     {0,0,1,1,1,1,0,0}
 };
 
+
+// pantera collision
+bool checkBoxCollision(float x1, float y1, float w1, float h1,
+                       float x2, float y2, float w2, float h2)
+{
+    // If one rectangle is on left side of other
+    if (x1 + w1 <= x2) return false;
+    if (x2 + w2 <= x1) return false;
+    if (y1 + h1 <= y2) return false;
+    if (y2 + h2 <= y1) return false;
+    return true;
+}
+
+
+// ----------------- SPRITE PANTERY (pixel-art) ---------
+
+// Tu zdefiniuj własny kształt 8×8. 
+// 1 = zapalony piksel, 0 = zgaszony (będzie kolorem tła).
+// Poniżej przykładowy (pseudolosowy) wzór, zmień do woli.
+static bool pantherSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
+{
+    {0,0,1,1,1,0,0,0},  // uszy/głowa
+    {0,1,1,0,1,1,0,0},  // głowa / pysk
+    {1,1,1,1,1,1,1,0},  // tułów 
+    {1,1,1,1,1,1,1,0},
+    {1,1,1,1,1,1,1,1},  // tułów (większy)
+    {1,1,1,1,1,1,1,1},
+    {1,1,1,1,1,1,1,0},  // tu kończy się ciało, ogon w prawo
+    {0,1,1,1,1,1,0,0}   // tylne łapy
+};
 
 
 // ----------------- SPRITE ZŁOTA (pixel-art) ---------
@@ -221,6 +260,41 @@ void drawGold2Sprite(SDL_Renderer* renderer, float x, float y)
 }
 
 
+
+// -----------------------------------------------------
+// Rysujemy pixel-art w miejscu (x,y) o szerokości i wysokości
+// docelowej 20×20 (czyli skala 2.5, bo sprite ma 8×8).
+void drawPantherSprite(SDL_Renderer* renderer, float x, float y)
+{
+    // Obliczamy skalę tak, by sprite 8×8 zmieścił się w 20×20
+    float scaleX = (float)PANTHER_WIDTH  / (float)SPRITE_WIDTH;   // 20 / 8 = 2.5
+    float scaleY = (float)PANTHER_HEIGHT / (float)SPRITE_HEIGHT;  // 20 / 8 = 2.5
+
+    for(int row = 0; row < SPRITE_HEIGHT; row++)
+    {
+        for(int col = 0; col < SPRITE_WIDTH; col++)
+        {
+            bool pixelOn = pantherSprite[row][col];
+            // Wybieramy kolor: zapalony = zielony, zgaszony = tło
+            SDL_Color c = pixelOn ? COLOR_PANTHER : COLOR_PATH;
+
+            SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
+
+            // Rysujemy kwadracik scaleX × scaleY
+            float drawX = x + col * scaleX;
+            float drawY = y + row * scaleY;
+
+            SDL_Rect rect;
+            rect.x = (int)drawX;
+            rect.y = (int)drawY;
+            rect.w = (int)scaleX;
+            rect.h = (int)scaleY;
+
+            SDL_RenderFillRect(renderer, &rect);
+        }
+    }
+}
+
 // -----------------------------------------------------
 // (Opcjonalna) funkcja kolizji z rogami bounding-boxa
 bool checkCollisionWithWalls(float newX, float newY, const std::vector<std::vector<int>>& maze) 
@@ -363,7 +437,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    // Labirynt (1=ściana, 0=ścieżka, 3/4=złoto, 5=życie, 6=start)
+    // Labirynt (1=ściana, 0=ścieżka, 3/4=złoto, 5=życie, 6=start, 7 = pantera)
     std::vector<std::vector<int>> maze = {
         {5, 5, 5, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 6, 1, 1}, 
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1},
@@ -395,6 +469,7 @@ int main(int argc, char* argv[])
     posX = 19.0f * CELL_SIZE + (CELL_SIZE - PLAYER_WIDTH) / 2.0f;
     posY =  1.0f * CELL_SIZE + (CELL_SIZE - PLAYER_HEIGHT)/ 2.0f;
 
+    
     // Początkowo stoimy w miejscu
     targetPosX = posX;
     targetPosY = posY;
@@ -515,6 +590,21 @@ int main(int argc, char* argv[])
                 else if (cellValue == 5) {
                     // Tu np. mechanika życia
                 }
+
+// Kolizja z panterą
+if (checkBoxCollision(posX, posY, PLAYER_WIDTH, PLAYER_HEIGHT,
+                      pantherX, pantherY, PANTHER_WIDTH, PANTHER_HEIGHT)) 
+                      {
+    if (hasGold) {
+        std::cout << "Złapała Cię pantera. Tracisz złoto!\n";
+        hasGold = false;
+    } else {
+        std::cout << "Złapała Cię pantera. Tracisz życie!\n";
+        // Usuwasz jedno życie z labiryntu lub zmniejszasz licznik "lives"
+        maze[0][2] = 0;
+    }
+}
+
             }
         }
 
@@ -536,7 +626,7 @@ int main(int argc, char* argv[])
                     drawRect(renderer, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE, COLOR_LIVES);
                 } else if (val == 6) {
                     drawRect(renderer, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE, COLOR_START);
-                } else {
+                }  else {
                     drawRect(renderer, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE, COLOR_PATH);
                 }
             }
@@ -549,7 +639,10 @@ int main(int argc, char* argv[])
         // *** RYSOWANIE GRACZA: pixel-art sprite ***
         drawPlayerSprite(renderer, posX, posY);
 
-      
+        // Rysowanie pantery
+        drawPantherSprite(renderer, pantherX, pantherY);
+
+        // Wyświetlanie
         SDL_RenderPresent(renderer);
 
         // Krótka pauza (~25 FPS)
