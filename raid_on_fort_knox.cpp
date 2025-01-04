@@ -5,7 +5,7 @@
 #include <cmath>    // std::sqrt
 #include <string>
 
-// ----------------- USTAWIENIA ------------------------ zmiana jakaś 
+// ----------------- USTAWIENIA ------------------------
 
 // Rozmiar kafelka (tunel ma 1 kafelek szerokości)
 const int CELL_SIZE = 25;
