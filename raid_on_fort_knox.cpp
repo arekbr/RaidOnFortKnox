@@ -10,6 +10,7 @@
 // Rozmiar kafelka (tunel ma 1 kafelek szerokości)
 const int CELL_SIZE = 25;
 
+
 // Rozmiar "logiczny" gracza (używane do snapowania i kolizji bounding-box)
 const int PLAYER_WIDTH  = 20;
 const int PLAYER_HEIGHT = 20;
