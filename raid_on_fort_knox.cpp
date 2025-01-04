@@ -15,6 +15,19 @@ const int CELL_SIZE = 25;
 const int PLAYER_WIDTH  = 20;
 const int PLAYER_HEIGHT = 20;
 
+const int START_WIDTH  = 20;
+const int START_HEIGHT = 20;
+
+const int GOLD_WIDTH  = 20;
+const int GOLD_HEIGHT = 20;
+
+const int GOLD2_WIDTH  = 20;
+const int GOLD2_HEIGHT = 20;
+
+const int PANTER_WIDTH  = 20;
+const int PANTER_HEIGHT = 20;
+
+
 // Rozmiar okna
 const int WINDOW_WIDTH  = 550;
 const int WINDOW_HEIGHT = 600;
@@ -67,13 +80,10 @@ static bool playerSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
 
 // ----------------- SPRITE ZŁOTA (pixel-art) ---------
 // Rozmiar sprite'a (8x8) - to TYLKO do definicji tablicy
-static const int GOLD_SPRITE_WIDTH  = 8;
-static const int GOLD_SPRITE_HEIGHT = 8;
-
 // Tu zdefiniuj własny kształt 8×8. 
 // 1 = zapalony piksel, 0 = zgaszony (będzie kolorem tła).
 // Poniżej przykładowy (pseudolosowy) wzór, zmień do woli.
-static bool goldSprite[GOLD_SPRITE_HEIGHT][GOLD_SPRITE_WIDTH] =
+static bool goldSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
 {
     {1,0,0,0,0,0,0,1},
     {0,1,0,0,0,0,1,0},
@@ -85,6 +95,24 @@ static bool goldSprite[GOLD_SPRITE_HEIGHT][GOLD_SPRITE_WIDTH] =
     {0,0,0,0,0,0,0,0}
 };
 
+
+
+// ----------------- SPRITE ZŁOTA podwojnego (pixel-art) ---------
+// Rozmiar sprite'a (8x8) - to TYLKO do definicji tablicy
+// Tu zdefiniuj własny kształt 8×8. 
+// 1 = zapalony piksel, 0 = zgaszony (będzie kolorem tła).
+// Poniżej przykładowy (pseudolosowy) wzór, zmień do woli.
+static bool gold2Sprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
+{
+    {1,0,0,0,0,0,0,1},
+    {0,1,0,0,0,0,1,0},
+    {0,0,1,0,0,1,0,0},
+    {1,1,1,1,1,1,1,1},
+    {1,1,1,1,1,1,1,1},
+    {0,1,1,1,1,1,1,0},
+    {1,0,0,0,0,0,0,1},
+    {0,0,0,0,0,0,0,0}
+};
 
 
 // -----------------------------------------------------
@@ -120,6 +148,78 @@ void drawPlayerSprite(SDL_Renderer* renderer, float x, float y)
         }
     }
 }
+
+
+// -----------------------------------------------------
+// Rysujemy pixel-art w miejscu (x,y) o szerokości i wysokości
+// docelowej 20×20 (czyli skala 2.5, bo sprite ma 8×8).
+void drawGoldSprite(SDL_Renderer* renderer, float x, float y)
+{
+    // Obliczamy skalę tak, by sprite 8×8 zmieścił się w 20×20
+    float scaleX = (float)GOLD_WIDTH  / (float)SPRITE_WIDTH;   // 20 / 8 = 2.5
+    float scaleY = (float)GOLD_HEIGHT / (float)SPRITE_HEIGHT;  // 20 / 8 = 2.5
+
+    for(int row = 0; row < SPRITE_HEIGHT; row++)
+    {
+        for(int col = 0; col < SPRITE_WIDTH; col++)
+        {
+            bool pixelOn = goldSprite[row][col];
+            // Wybieramy kolor: zapalony = zielony, zgaszony = tło
+            SDL_Color c = pixelOn ? COLOR_GOLD : COLOR_PATH;
+
+            SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
+
+            // Rysujemy kwadracik scaleX × scaleY
+            float drawX = x + col * scaleX;
+            float drawY = y + row * scaleY;
+
+            SDL_Rect rect;
+            rect.x = (int)drawX;
+            rect.y = (int)drawY;
+            rect.w = (int)scaleX;
+            rect.h = (int)scaleY;
+
+            SDL_RenderFillRect(renderer, &rect);
+        }
+    }
+}
+
+
+
+// -----------------------------------------------------
+// Rysujemy pixel-art w miejscu (x,y) o szerokości i wysokości
+// docelowej 20×20 (czyli skala 2.5, bo sprite ma 8×8).
+void drawGold2Sprite(SDL_Renderer* renderer, float x, float y)
+{
+    // Obliczamy skalę tak, by sprite 8×8 zmieścił się w 20×20
+    float scaleX = (float)GOLD2_WIDTH  / (float)SPRITE_WIDTH;   // 20 / 8 = 2.5
+    float scaleY = (float)GOLD2_HEIGHT / (float)SPRITE_HEIGHT;  // 20 / 8 = 2.5
+
+    for(int row = 0; row < SPRITE_HEIGHT; row++)
+    {
+        for(int col = 0; col < SPRITE_WIDTH; col++)
+        {
+            bool pixelOn = gold2Sprite[row][col];
+            // Wybieramy kolor: zapalony = zielony, zgaszony = tło
+            SDL_Color c = pixelOn ? COLOR_GOLD2 : COLOR_PATH;
+
+            SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
+
+            // Rysujemy kwadracik scaleX × scaleY
+            float drawX = x + col * scaleX;
+            float drawY = y + row * scaleY;
+
+            SDL_Rect rect;
+            rect.x = (int)drawX;
+            rect.y = (int)drawY;
+            rect.w = (int)scaleX;
+            rect.h = (int)scaleY;
+
+            SDL_RenderFillRect(renderer, &rect);
+        }
+    }
+}
+
 
 // -----------------------------------------------------
 // (Opcjonalna) funkcja kolizji z rogami bounding-boxa
@@ -187,6 +287,8 @@ void drawRect(SDL_Renderer* renderer, int x, int y, int w, int h, SDL_Color colo
     SDL_Rect rect = { x, y, w, h };
     SDL_RenderFillRect(renderer, &rect);
 }
+
+
 
 // -----------------------------------------------------
 // Funkcja do rysowania tekstu
@@ -427,9 +529,9 @@ int main(int argc, char* argv[])
                 if (val == 1) {
                     drawRect(renderer, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE, COLOR_WALL);
                 } else if (val == 4) {
-                    drawRect(renderer, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE, COLOR_GOLD);
+                    drawGoldSprite(renderer, x * CELL_SIZE, y * CELL_SIZE);
                 } else if (val == 3) {
-                    drawRect(renderer, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE, COLOR_GOLD2);
+                    drawGold2Sprite(renderer, x * CELL_SIZE, y * CELL_SIZE);
                 } else if (val == 5) {
                     drawRect(renderer, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE, COLOR_LIVES);
                 } else if (val == 6) {
@@ -447,10 +549,11 @@ int main(int argc, char* argv[])
         // *** RYSOWANIE GRACZA: pixel-art sprite ***
         drawPlayerSprite(renderer, posX, posY);
 
+      
         SDL_RenderPresent(renderer);
 
         // Krótka pauza (~25 FPS)
-        SDL_Delay(40);
+        SDL_Delay(10);
     }
 
     // Sprzątanie
