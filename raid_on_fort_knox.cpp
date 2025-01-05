@@ -1000,7 +1000,10 @@ if (!pantherIsDisabled) {
         // *** RYSOWANIE GRACZA: pixel-art sprite ***
 
         // sprawdzamy, czy gracz idzie w lewo, prawo, górę, dół
-        if (dirCellX == 1) {
+        if (!isMoving) {
+            drawPlayerSprite(renderer, posX, posY);
+        }
+          else if (dirCellX == 1) {
             drawPlayerSpriteRight(renderer, posX, posY);
         } else if (dirCellX == -1) {
             drawPlayerSpriteLeft(renderer, posX, posY);
