@@ -569,6 +569,13 @@ int main(int argc, char* argv[])
                 }
                 isMoving = false;
             }
+             if (pantherIsDisabled) {
+        pantherDisableTimer--;
+        if (pantherDisableTimer <= 0) {
+            pantherIsDisabled = false;
+            std::cout << "[DEBUG] Pantera znowu niebezpieczna.\n";
+        }
+    }
         }
 
         // 3) Sprawdzamy, czy zbieramy złoto / wejście na start
