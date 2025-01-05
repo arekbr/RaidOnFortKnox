@@ -913,18 +913,29 @@ int main(int argc, char* argv[])
             {
                 int cellValue = maze[checkCellY][checkCellX];
                 if (cellValue == 4) {
-                    if (!hasGold) {
+                    
+                    if (hasGold) {
+                        isMoving = false;
+                    } else if (!hasGold) {
                         std::cout << "Zbierasz zloto pojedyncze\n";
                         maze[checkCellY][checkCellX] = 0;
                         hasGold = true;
+                        if (hasGold) {
+                         isMoving = false;
+                        }
                     }
                 }
                 else if (cellValue == 3) {
-                    if (!hasGold) {
+                 if (hasGold) {
+                    isMoving = false;
+                 } else if (!hasGold) {
                         std::cout << "Zbierasz zloto podwojne\n";
                         maze[checkCellY][checkCellX] = 4;
                         hasGold = true;
+                        if (hasGold) {
+                        isMoving = false;
                     }
+                }
                 }
                 // kolizja ze startem
                         if (checkStartBoxCollision(posX, posY, PLAYER_WIDTH, PLAYER_HEIGHT,
