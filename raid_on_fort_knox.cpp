@@ -37,11 +37,11 @@ float pantherX = 10.0f * CELL_SIZE + (CELL_SIZE - PANTHER_WIDTH) / 2.0f;
 float pantherY =  6.0f * CELL_SIZE + (CELL_SIZE - PANTHER_HEIGHT)/ 2.0f;    
 
 
-bool pantherIsDisabled = false;      // czy pantera jest w trybie „bezpiecznym”?
+bool pantherIsDisabled = false;      // czy pantera jest w trybie „bezpiecznym”?.
 
 int  pantherDisableTimer = 5;        // licznik czasu, ile jeszcze pantera będzie wyłączona
 
-const int PANTHER_DISABLE_TIME = 180; // np. 180 klatek = ok. 3 sekundy (jeśli 60 FPS)
+const int PANTHER_DISABLE_TIME = 360; // np. 180 klatek = ok. 3 sekundy (jeśli 60 FPS)
 
 
 // Rozmiar okna
