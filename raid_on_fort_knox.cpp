@@ -6,65 +6,59 @@
 #include <string>
 
 
-// ----------------- USTAWIENIA ------------------------ zmiana jakaś 
+// ----------------- USTAWIENIA ------------------------
 
 // Rozmiar kafelka (tunel ma 1 kafelek szerokości)
 const int CELL_SIZE = 25;
 
 
-// Rozmiar "logiczny" gracza (używane do snapowania i kolizji bounding-box)
-const int PLAYER_WIDTH  = 20;
-const int PLAYER_HEIGHT = 20;
-
-const int START_WIDTH  = 20;
-const int START_HEIGHT = 20;
-
-const int GOLD_WIDTH  = 20;
-const int GOLD_HEIGHT = 20;
-
-const int GOLD2_WIDTH  = 20;
-const int GOLD2_HEIGHT = 20;
-
-const int PANTHER_WIDTH  = 20;
-const int PANTHER_HEIGHT = 20;
+// Rozmiar "logiczne" sprajtów (używane do snapowania i kolizji bounding-box)
+const int PLAYER_WIDTH      = 20;
+const int PLAYER_HEIGHT     = 20;
+const int START_WIDTH       = 20;
+const int START_HEIGHT      = 20;
+const int GOLD_WIDTH        = 20;
+const int GOLD_HEIGHT       = 20;
+const int GOLD2_WIDTH       = 20;
+const int GOLD2_HEIGHT      = 20;
+const int PANTHER_WIDTH     = 20;
+const int PANTHER_HEIGHT    = 20;
 
 
 // pozycja pantery
-//float pantherX = 10.0f * CELL_SIZE;
-//float pantherY =  5.0f * CELL_SIZE;
-
 float pantherX = 10.0f * CELL_SIZE + (CELL_SIZE - PANTHER_WIDTH) / 2.0f;
 float pantherY =  6.0f * CELL_SIZE + (CELL_SIZE - PANTHER_HEIGHT)/ 2.0f;    
 
+// czy pantera jest w trybie „bezpiecznym”?
+bool pantherIsDisabled = false;      
 
-bool pantherIsDisabled = false;      // czy pantera jest w trybie „bezpiecznym”?.
+// licznik czasu, ile jeszcze pantera będzie wyłączona. coś nie bardzo działa i chyba nie jest używane
+int  pantherDisableTimer = 5;        
 
-int  pantherDisableTimer = 5;        // licznik czasu, ile jeszcze pantera będzie wyłączona.
+// np. 180 klatek = ok. 3 sekundy (jeśli 60 FPS)
+const int PANTHER_DISABLE_TIME = 180; 
 
-const int PANTHER_DISABLE_TIME = 180; // np. 180 klatek = ok. 3 sekundy (jeśli 60 FPS)
-
-
-// Rozmiar okna
+// Rozmiar okna graficznego
 const int WINDOW_WIDTH  = 550;
 const int WINDOW_HEIGHT = 600;
 
 // Szybkość ruchu w pikselach na klatkę
 float speed = 2.0f; 
 
-// ----------------- KOLORY ---------------------------
-const SDL_Color COLOR_WALL   = { 0,   0, 255, 255 }; // Niebieski
-const SDL_Color COLOR_PLAYER = { 0, 255,   0, 255 }; // Zielony
-const SDL_Color COLOR_PATH   = { 0,   0,   0, 255 }; // Czarny (tło)
-const SDL_Color COLOR_LIVES  = { 255, 0,   0, 255 }; // Czerwony
-const SDL_Color COLOR_START  = { 255, 255, 0, 255 }; // Żółty
-const SDL_Color COLOR_GOLD   = { 255, 215, 0, 255 }; // Złoty
-const SDL_Color COLOR_GOLD2  = { 255, 115, 66,255 }; // Złoto "podwójne"
-const SDL_Color COLOR_PANTHER = { 255, 0, 0, 255 }; // Pantera
-const SDL_Color COLOR_PANTHER_DISABLED = { 255, 255, 11, 255 }; // Pantera pod kolizji
+// ----------------- KOLORY ELEMENTÓW GRY---------------------------
+const SDL_Color COLOR_WALL              = { 0,   0, 255, 255 }; // Niebieski
+const SDL_Color COLOR_PLAYER            = { 0, 255,   0, 255 }; // Zielony
+const SDL_Color COLOR_PATH              = { 0,   0,   0, 255 }; // Czarny (tło)
+const SDL_Color COLOR_LIVES             = { 255, 0,   0, 255 }; // Czerwony
+const SDL_Color COLOR_START             = { 255, 255, 0, 255 }; // Żółty
+const SDL_Color COLOR_GOLD              = { 255, 215, 0, 255 }; // Złoty
+const SDL_Color COLOR_GOLD2             = { 255, 115, 66,255 }; // Złoto "podwójne"
+const SDL_Color COLOR_PANTHER           = { 255, 0, 0, 255 }; // Pantera
+const SDL_Color COLOR_PANTHER_DISABLED  = { 255, 255, 11, 255 }; // Pantera pod kolizji
 
 
-// ----------------- POZYCJA GRACZA --------------------
-float posX, posY;          // Pozycja w pikselach (lewy górny róg)
+// ----------------- POZYCJA GRACZA Pozycja w pikselach (lewy górny róg)--------------------
+float posX, posY;          
 
 // Pozycja docelowa w pikselach
 float targetPosX, targetPosY;
@@ -78,14 +72,24 @@ bool justCollidedWithPanther = false;
 // Kierunek w sensie kafelków (np. (1,0) to w prawo)
 int   dirCellX = 0, dirCellY = 0;
 
+// SPRAWDZENIE KOLIZJI Z BOUNDING-BOXEM PANTERY
+bool checkPantherBoxCollision(float x1, float y1, float w1, float h1,
+                       float x2, float y2, float w2, float h2)
+{
+    // If one rectangle is on left side of other
+    if (x1 + w1 <= x2) return false;
+    if (x2 + w2 <= x1) return false;
+    if (y1 + h1 <= y2) return false;
+    if (y2 + h2 <= y1) return false;
+    return true;
+}
+
 // ----------------- SPRITE GRACZA (pixel-art) ---------
 // Rozmiar sprite'a (8x8) - to TYLKO do definicji tablicy
 static const int SPRITE_WIDTH  = 8;
 static const int SPRITE_HEIGHT = 8;
-
-// Tu zdefiniuj własny kształt 8×8. 
+// kształt 8×8. 
 // 1 = zapalony piksel, 0 = zgaszony (będzie kolorem tła).
-// Poniżej przykładowy (pseudolosowy) wzór, zmień do woli.
 static bool playerSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
 {
     {0,0,0,1,1,0,0,0},
@@ -98,25 +102,8 @@ static bool playerSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
     {0,0,1,1,1,1,0,0}
 };
 
-
-// pantera collision
-bool checkBoxCollision(float x1, float y1, float w1, float h1,
-                       float x2, float y2, float w2, float h2)
-{
-    // If one rectangle is on left side of other
-    if (x1 + w1 <= x2) return false;
-    if (x2 + w2 <= x1) return false;
-    if (y1 + h1 <= y2) return false;
-    if (y2 + h2 <= y1) return false;
-    return true;
-}
-
-
 // ----------------- SPRITE PANTERY (pixel-art) ---------
-
-// Tu zdefiniuj własny kształt 8×8. 
-// 1 = zapalony piksel, 0 = zgaszony (będzie kolorem tła).
-// Poniżej przykładowy (pseudolosowy) wzór, zmień do woli.
+// KSZTAŁT 8×8.
 static bool pantherSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
 {
     {0,0,1,1,1,0,0,0},  // uszy/głowa
@@ -129,12 +116,9 @@ static bool pantherSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
     {0,1,1,1,1,1,0,0}   // tylne łapy
 };
 
-
 // ----------------- SPRITE ZŁOTA (pixel-art) ---------
 // Rozmiar sprite'a (8x8) - to TYLKO do definicji tablicy
-// Tu zdefiniuj własny kształt 8×8. 
-// 1 = zapalony piksel, 0 = zgaszony (będzie kolorem tła).
-// Poniżej przykładowy (pseudolosowy) wzór, zmień do woli.
+// KSZTAŁT 8×8.
 static bool goldSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
 {
     {1,0,0,0,0,0,0,1},
@@ -147,13 +131,8 @@ static bool goldSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
     {0,0,0,0,0,0,0,0}
 };
 
-
-
 // ----------------- SPRITE ZŁOTA podwojnego (pixel-art) ---------
-// Rozmiar sprite'a (8x8) - to TYLKO do definicji tablicy
-// Tu zdefiniuj własny kształt 8×8. 
-// 1 = zapalony piksel, 0 = zgaszony (będzie kolorem tła).
-// Poniżej przykładowy (pseudolosowy) wzór, zmień do woli.
+// KSZTAŁT 8×8.
 static bool gold2Sprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
 {
     {1,0,0,0,0,0,0,1},
@@ -166,12 +145,8 @@ static bool gold2Sprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
     {0,0,0,0,0,0,0,0}
 };
 
-
 // ----------------- SPRITE STARTU (pixel-art) ---------
-// Rozmiar sprite'a (8x8) - to TYLKO do definicji tablicy
-// Tu zdefiniuj własny kształt 8×8. 
-// 1 = zapalony piksel, 0 = zgaszony (będzie kolorem tła).
-// Poniżej przykładowy (pseudolosowy) wzór, zmień do woli.
+// KSZTAŁT 8×8.
 static bool startSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
 {
     {0,0,1,1,1,1,0,0},
@@ -184,8 +159,7 @@ static bool startSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
     {0,1,0,0,0,0,1,0}
 };
 
-// -----------------------------------------------------
-// Rysujemy pixel-art w miejscu (x,y) o szerokości i wysokości
+// Rysujemy pixel-art GRACZA w miejscu (x,y) o szerokości i wysokości
 // docelowej 20×20 (czyli skala 2.5, bo sprite ma 8×8).
 void drawPlayerSprite(SDL_Renderer* renderer, float x, float y)
 {
@@ -200,27 +174,21 @@ void drawPlayerSprite(SDL_Renderer* renderer, float x, float y)
             bool pixelOn = playerSprite[row][col];
             // Wybieramy kolor: zapalony = zielony, zgaszony = tło
             SDL_Color c = pixelOn ? COLOR_PLAYER : COLOR_PATH;
-
             SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
-
             // Rysujemy kwadracik scaleX × scaleY
             float drawX = x + col * scaleX;
             float drawY = y + row * scaleY;
-
             SDL_Rect rect;
             rect.x = (int)drawX;
             rect.y = (int)drawY;
             rect.w = (int)scaleX;
             rect.h = (int)scaleY;
-
             SDL_RenderFillRect(renderer, &rect);
         }
     }
 }
 
-
-// -----------------------------------------------------
-// Rysujemy pixel-art w miejscu (x,y) o szerokości i wysokości
+// Rysujemy pixel-art ZŁOTA w miejscu (x,y) o szerokości i wysokości
 // docelowej 20×20 (czyli skala 2.5, bo sprite ma 8×8).
 void drawGoldSprite(SDL_Renderer* renderer, float x, float y)
 {
@@ -235,35 +203,27 @@ void drawGoldSprite(SDL_Renderer* renderer, float x, float y)
             bool pixelOn = goldSprite[row][col];
             // Wybieramy kolor: zapalony = zielony, zgaszony = tło
             SDL_Color c = pixelOn ? COLOR_GOLD : COLOR_PATH;
-
             SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
-
             // Rysujemy kwadracik scaleX × scaleY
             float drawX = x + col * scaleX;
             float drawY = y + row * scaleY;
-
             SDL_Rect rect;
             rect.x = (int)drawX;
             rect.y = (int)drawY;
             rect.w = (int)scaleX;
             rect.h = (int)scaleY;
-
             SDL_RenderFillRect(renderer, &rect);
         }
     }
 }
 
-
-
-// -----------------------------------------------------
-// Rysujemy pixel-art w miejscu (x,y) o szerokości i wysokości
+// Rysujemy pixel-art PODWÓJNEGO ZŁOTA w miejscu (x,y) o szerokości i wysokości
 // docelowej 20×20 (czyli skala 2.5, bo sprite ma 8×8).
 void drawGold2Sprite(SDL_Renderer* renderer, float x, float y)
 {
     // Obliczamy skalę tak, by sprite 8×8 zmieścił się w 20×20
     float scaleX = (float)GOLD2_WIDTH  / (float)SPRITE_WIDTH;   // 20 / 8 = 2.5
     float scaleY = (float)GOLD2_HEIGHT / (float)SPRITE_HEIGHT;  // 20 / 8 = 2.5
-
     for(int row = 0; row < SPRITE_HEIGHT; row++)
     {
         for(int col = 0; col < SPRITE_WIDTH; col++)
@@ -271,70 +231,55 @@ void drawGold2Sprite(SDL_Renderer* renderer, float x, float y)
             bool pixelOn = gold2Sprite[row][col];
             // Wybieramy kolor: zapalony = zielony, zgaszony = tło
             SDL_Color c = pixelOn ? COLOR_GOLD2 : COLOR_PATH;
-
             SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
-
             // Rysujemy kwadracik scaleX × scaleY
             float drawX = x + col * scaleX;
             float drawY = y + row * scaleY;
-
             SDL_Rect rect;
             rect.x = (int)drawX;
             rect.y = (int)drawY;
             rect.w = (int)scaleX;
             rect.h = (int)scaleY;
-
             SDL_RenderFillRect(renderer, &rect);
         }
     }
 }
 
-
-
-// -----------------------------------------------------
-// Rysujemy pixel-art w miejscu (x,y) o szerokości i wysokości
+// Rysujemy pixel-art PANTERY w miejscu (x,y) o szerokości i wysokości
 // docelowej 20×20 (czyli skala 2.5, bo sprite ma 8×8).
 void drawPantherSprite(SDL_Renderer* renderer, float x, float y, bool disabled)
 {
     // Obliczamy skalę tak, by sprite 8×8 zmieścił się w 20×20
     float scaleX = (float)PANTHER_WIDTH  / (float)SPRITE_WIDTH;   // 20 / 8 = 2.5
     float scaleY = (float)PANTHER_HEIGHT / (float)SPRITE_HEIGHT;  // 20 / 8 = 2.5
-
     for(int row = 0; row < SPRITE_HEIGHT; row++)
     {
         for(int col = 0; col < SPRITE_WIDTH; col++)
         {
             bool pixelOn = pantherSprite[row][col];
             // Wybieramy kolor: zapalony = zielony, zgaszony = tło
-            SDL_Color c = pixelOn 
-                  ? (disabled ? COLOR_PANTHER_DISABLED : COLOR_PANTHER)
-                  : COLOR_PATH;
+            SDL_Color c = pixelOn ? (disabled ? COLOR_PANTHER_DISABLED : COLOR_PANTHER): COLOR_PATH;
             SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
-
             // Rysujemy kwadracik scaleX × scaleY
             float drawX = x + col * scaleX;
             float drawY = y + row * scaleY;
-
             SDL_Rect rect;
             rect.x = (int)drawX;
             rect.y = (int)drawY;
             rect.w = (int)scaleX;
             rect.h = (int)scaleY;
-
             SDL_RenderFillRect(renderer, &rect);
         }
     }
 }
 
-// -----------------------------------------------------
-// Rysujemy pixel-art w miejscu (x,y) o szerokości i wysokości
+// Rysujemy pixel-art IKONA STARTU GRACZA w miejscu (x,y) o szerokości i wysokości
 // docelowej 20×20 (czyli skala 2.5, bo sprite ma 8×8).
 void drawStartSprite(SDL_Renderer* renderer, float x, float y)
 {
     // Obliczamy skalę tak, by sprite 8×8 zmieścił się w 20×20
     float scaleX = (float)START_WIDTH  / (float)SPRITE_WIDTH;   // 20 / 8 = 2.5
     float scaleY = (float)START_HEIGHT / (float)SPRITE_HEIGHT;  // 20 / 8 = 2.5
-
     for(int row = 0; row < SPRITE_HEIGHT; row++)
     {
         for(int col = 0; col < SPRITE_WIDTH; col++)
@@ -342,26 +287,20 @@ void drawStartSprite(SDL_Renderer* renderer, float x, float y)
             bool pixelOn = startSprite[row][col];
             // Wybieramy kolor: zapalony = zielony, zgaszony = tło
             SDL_Color c = pixelOn ? COLOR_START : COLOR_PATH;
-
             SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
-
             // Rysujemy kwadracik scaleX × scaleY
             float drawX = x + col * scaleX;
             float drawY = y + row * scaleY;
-
             SDL_Rect rect;
             rect.x = (int)drawX;
             rect.y = (int)drawY;
             rect.w = (int)scaleX;
             rect.h = (int)scaleY;
-
             SDL_RenderFillRect(renderer, &rect);
         }
     }
 }
 
-
-// -----------------------------------------------------
 // (Opcjonalna) funkcja kolizji z rogami bounding-boxa
 bool checkCollisionWithWalls(float newX, float newY, const std::vector<std::vector<int>>& maze) 
 {
@@ -374,7 +313,6 @@ bool checkCollisionWithWalls(float newX, float newY, const std::vector<std::vect
         if (px < 0 || py < 0) return true; // poza mapą
         int tileX = (int)(px / CELL_SIZE);
         int tileY = (int)(py / CELL_SIZE);
-
         if (tileY < 0 || tileY >= (int)maze.size() ||
             tileX < 0 || tileX >= (int)maze[tileY].size())
         {
@@ -391,7 +329,6 @@ bool checkCollisionWithWalls(float newX, float newY, const std::vector<std::vect
     return false;
 }
 
-// -----------------------------------------------------
 // Funkcja do obliczenia, dokąd można dojść w danym kierunku (dx, dy) aż do ściany.
 void computeTargetCell(
     const std::vector<std::vector<int>>& maze,
@@ -420,7 +357,6 @@ void computeTargetCell(
     outY = newY;
 }
 
-// -----------------------------------------------------
 // Funkcja do rysowania prostokąta - używana przy ścianach, złocie, itp.
 void drawRect(SDL_Renderer* renderer, int x, int y, int w, int h, SDL_Color color) {
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
@@ -428,9 +364,6 @@ void drawRect(SDL_Renderer* renderer, int x, int y, int w, int h, SDL_Color colo
     SDL_RenderFillRect(renderer, &rect);
 }
 
-
-
-// -----------------------------------------------------
 // Funkcja do rysowania tekstu
 void renderText(SDL_Renderer* renderer, TTF_Font* font, const std::string& text, int x, int y, SDL_Color color) {
     SDL_Surface* surface = TTF_RenderText_Solid(font, text.c_str(), color);
@@ -450,7 +383,7 @@ void renderText(SDL_Renderer* renderer, TTF_Font* font, const std::string& text,
     SDL_DestroyTexture(texture);
 }
 
-// -----------------------------------------------------
+// GŁÓWNA PĘTLA PROGRAMU-----------------------------------------------------
 int main(int argc, char* argv[])
 {
     // Licznik punktów, flaga złota
@@ -503,9 +436,9 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    // Labirynt (1=ściana, 0=ścieżka, 3/4=złoto, 5=życie, 6=start, 7 = pantera)
+    // Labirynt (1=ściana, 0=ścieżka, 5=życie)
     std::vector<std::vector<int>> maze = {
-        {5, 5, 5, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 6, 1, 1}, 
+        {5, 5, 5, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1}, 
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1},
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1},
         {1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
@@ -535,6 +468,8 @@ int main(int argc, char* argv[])
     posX = 19.0f * CELL_SIZE + (CELL_SIZE - PLAYER_WIDTH) / 2.0f;
     posY =  1.0f * CELL_SIZE + (CELL_SIZE - PLAYER_HEIGHT)/ 2.0f;
 
+  //  posXGold = 19.0f * CELL_SIZE + (CELL_SIZE - GOLD_WIDTH) / 2.0f;
+  //  posYGold =  1.0f * CELL_SIZE + (CELL_SIZE - GOLD_HEIGHT)/ 2.0f;
     
     // Początkowo stoimy w miejscu
     targetPosX = posX;
@@ -665,7 +600,7 @@ int main(int argc, char* argv[])
                 }
 if (!pantherIsDisabled) {
                 // Kolizja z panterą
-                        if (checkBoxCollision(posX, posY, PLAYER_WIDTH, PLAYER_HEIGHT,
+                        if (checkPantherBoxCollision(posX, posY, PLAYER_WIDTH, PLAYER_HEIGHT,
                         pantherX, pantherY, PANTHER_WIDTH, PANTHER_HEIGHT)) 
                       {
                             if (!justCollidedWithPanther) {
