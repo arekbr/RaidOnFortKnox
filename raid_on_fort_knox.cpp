@@ -105,6 +105,7 @@ static const int SPRITE_WIDTH  = 8;
 static const int SPRITE_HEIGHT = 8;
 // kształt 8×8. 
 // 1 = zapalony piksel, 0 = zgaszony (będzie kolorem tła).
+
 static bool playerSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
 {
     {0,0,1,1,1,1,0,0},
@@ -116,6 +117,48 @@ static bool playerSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
     {0,1,1,1,1,1,1,1},
     {1,1,0,0,0,0,0,0}
 };
+
+
+static bool playerSpriteRight[SPRITE_HEIGHT][SPRITE_WIDTH] =
+{
+{1, 0, 1, 0, 0, 0, 0, 0},
+{1, 1, 0, 1, 0, 0, 1, 0},
+{0, 1, 1, 1, 0, 1, 0, 1},
+{0, 1, 1, 1, 1, 1, 1, 1},
+{0, 1, 1, 1, 1, 1, 1, 1},
+{0, 1, 1, 1, 0, 1, 0, 1},
+{0, 1, 0, 1, 0, 0, 1, 0},
+{0, 1, 1, 0, 1, 0, 0, 0}
+};
+
+static bool playerSpriteDown[SPRITE_HEIGHT][SPRITE_WIDTH] =
+{
+{0, 0, 0, 0, 0, 0, 1, 1},
+{1, 1, 1, 1, 1, 1, 1, 0},
+{1, 0, 1, 1, 1, 1, 0, 1},
+{0, 1, 1, 1, 1, 1, 1, 0},
+{1, 0, 0, 1, 1, 0, 0, 0},
+{0, 0, 1, 1, 1, 1, 0, 0},
+{0, 1, 0, 1, 1, 0, 1, 0},
+{0, 0, 1, 1, 1, 1, 0, 0}
+
+};
+
+static bool playerSpriteLeft[SPRITE_HEIGHT][SPRITE_WIDTH] =
+{
+{0, 0, 0, 1, 0, 1, 1, 0},
+{0, 1, 0, 0, 1, 0, 1, 0},
+{1, 0, 1, 0, 1, 1, 1, 0},
+{1, 1, 1, 1, 1, 1, 1, 0},
+{1, 1, 1, 1, 1, 1, 1, 0},
+{1, 0, 1, 0, 1, 1, 1, 0},
+{0, 1, 0, 0, 1, 0, 1, 1},
+{0, 0, 0, 0, 0, 1, 0, 1}
+
+};
+
+
+
 
 // ----------------- SPRITE PANTERY (pixel-art) ---------
 // KSZTAŁT 8×8.
