@@ -121,15 +121,88 @@ static bool playerSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
 // KSZTAŁT 8×8.
 static bool pantherSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
 {
-    {0,0,1,1,1,0,0,0},  // uszy/głowa
-    {0,1,1,0,1,1,0,0},  // głowa / pysk
-    {1,1,1,1,1,1,1,0},  // tułów 
-    {1,1,1,1,1,1,1,0},
-    {1,1,1,1,1,1,1,1},  // tułów (większy)
-    {1,1,1,1,1,1,1,1},
-    {1,1,1,1,1,1,1,0},  // tu kończy się ciało, ogon w prawo
-    {0,1,1,1,1,1,0,0}   // tylne łapy
+    {0,0,1,0,0,1,0,0}, 
+    {0,0,1,1,1,1,0,0}, 
+    {0,1,0,1,1,0,1,0}, 
+    {1,1,1,1,1,1,1,1}, 
+    {0,1,1,1,1,1,1,0}, 
+    {0,1,1,1,1,1,1,0}, 
+    {0,0,1,1,1,1,0,0}, 
+    {0,0,0,0,1,0,0,0}   // tylne łapy
 };
+
+// ----------------- SPRITE PANTERY w prawo (pixel-art) ---------
+// KSZTAŁT 8×8.
+static bool pantherSpriteRight[SPRITE_HEIGHT][SPRITE_WIDTH] =
+{
+{0, 0, 0, 0, 1, 0, 0, 0}, 
+{0, 0, 1, 1, 1, 1, 0, 0}, 
+{0, 1, 1, 1, 1, 0, 1, 1}, 
+{0, 1, 1, 1, 1, 1, 1, 0}, 
+{1, 1, 1, 1, 1, 1, 1, 0}, 
+{0, 1, 1, 1, 1, 0, 1, 1}, 
+{0, 0, 1, 1, 1, 1, 0, 0}, 
+{0, 0, 0, 0, 1, 0, 0, 0}
+};
+
+
+// ----------------- SPRITE PANTERY w lewo (pixel-art) ---------
+// KSZTAŁT 8×8.
+static bool pantherSpriteLeft[SPRITE_HEIGHT][SPRITE_WIDTH] =
+{
+{0, 0, 0, 1, 0, 0, 0, 0}, 
+{0, 0, 1, 1, 1, 1, 0, 0}, 
+{1, 1, 0, 1, 1, 1, 1, 0}, 
+{0, 1, 1, 1, 1, 1, 1, 1}, 
+{0, 1, 1, 1, 1, 1, 1, 0}, 
+{1, 1, 0, 1, 1, 1, 1, 0}, 
+{0, 0, 1, 1, 1, 1, 0, 0}, 
+{0, 0, 0, 1, 0, 0, 0, 0}
+};
+
+
+// ----------------- SPRITE PANTERY w dół (pixel-art) ---------
+// KSZTAŁT 8×8.
+static bool pantherSpriteDown[SPRITE_HEIGHT][SPRITE_WIDTH] =
+{
+{0, 0, 0, 0, 1, 0, 0, 0}, 
+{0, 0, 1, 1, 1, 1, 0, 0}, 
+{0, 1, 1, 1, 1, 1, 1, 0}, 
+{0, 1, 1, 1, 1, 1, 1, 0}, 
+{1, 1, 1, 1, 1, 1, 1, 1}, 
+{0, 1, 0, 1, 1, 0, 1, 0}, 
+{0, 0, 1, 1, 1, 1, 0, 0}, 
+{0, 0, 1, 0, 0, 1, 0, 0}
+
+};
+
+/*Funkcja obracanie(tablica):
+    m = liczba_wierszy(tablica)
+    n = liczba_kolumn(tablica)
+
+    Stwórz nowa_tablica o wymiarach [n][m] (odwrócone wymiary)
+
+    Dla każdego i w zakresie [0, m-1]:
+        Dla każdego j w zakresie [0, n-1]:
+            nowa_tablica[j][m-1-i] = tablica[i][j]
+
+    Zwróć nowa_tablica
+*/
+    std::vector<std::vector<int>> obracanie(std::vector<std::vector<int>> maze)
+    {
+        int m = maze.size();
+        int n = maze[0].size();
+        std::vector<std::vector<int>> nowa_tablica(n, std::vector<int>(m));
+        for (int i = 0; i < m; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                nowa_tablica[j][m-1-i] = maze[i][j];
+            }
+        }
+        return nowa_tablica;
+    } 
+
 
 // ----------------- SPRITE ZŁOTA (pixel-art) ---------
 // Rozmiar sprite'a (8x8) - to TYLKO do definicji tablicy
@@ -176,7 +249,7 @@ static bool startSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
 
 // Rysujemy pixel-art GRACZA w miejscu (x,y) o szerokości i wysokości
 // docelowej 20×20 (czyli skala 2.5, bo sprite ma 8×8).
-
+//float dla wersji postaci z liniami pomiedzy pikselami
 
 
 /*void drawPlayerSprite(SDL_Renderer* renderer, float x, float y)
@@ -320,6 +393,92 @@ void drawPantherSprite(SDL_Renderer* renderer, float x, float y, bool disabled)
         }
     }
 }
+
+// Rysujemy pixel-art PANTERY w miejscu (x,y) o szerokości i wysokości
+// docelowej 20×20 (czyli skala 2.5, bo sprite ma 8×8).
+void drawPantherSpriteRight(SDL_Renderer* renderer, float x, float y, bool disabled)
+{
+    // Obliczamy skalę tak, by sprite 8×8 zmieścił się w 20×20
+    float scaleX = (float)PANTHER_WIDTH  / (float)SPRITE_WIDTH;   // 20 / 8 = 2.5
+    float scaleY = (float)PANTHER_HEIGHT / (float)SPRITE_HEIGHT;  // 20 / 8 = 2.5
+    for(int row = 0; row < SPRITE_HEIGHT; row++)
+    {
+        for(int col = 0; col < SPRITE_WIDTH; col++)
+        {
+            bool pixelOn = pantherSpriteRight[row][col];
+            // Wybieramy kolor: zapalony = zielony, zgaszony = tło
+            SDL_Color c = pixelOn ? (disabled ? COLOR_PANTHER_DISABLED : COLOR_PANTHER): COLOR_PATH;
+            SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
+            // Rysujemy kwadracik scaleX × scaleY
+            float drawX = x + col * scaleX;
+            float drawY = y + row * scaleY;
+            SDL_Rect rect;
+            rect.x = (int)drawX;
+            rect.y = (int)drawY;
+            rect.w = (int)scaleX;
+            rect.h = (int)scaleY;
+            SDL_RenderFillRect(renderer, &rect);
+        }
+    }
+}
+
+// Rysujemy pixel-art PANTERY w miejscu (x,y) o szerokości i wysokości
+// docelowej 20×20 (czyli skala 2.5, bo sprite ma 8×8).
+void drawPantherSpriteLeft(SDL_Renderer* renderer, float x, float y, bool disabled)
+{
+    // Obliczamy skalę tak, by sprite 8×8 zmieścił się w 20×20
+    float scaleX = (float)PANTHER_WIDTH  / (float)SPRITE_WIDTH;   // 20 / 8 = 2.5
+    float scaleY = (float)PANTHER_HEIGHT / (float)SPRITE_HEIGHT;  // 20 / 8 = 2.5
+    for(int row = 0; row < SPRITE_HEIGHT; row++)
+    {
+        for(int col = 0; col < SPRITE_WIDTH; col++)
+        {
+            bool pixelOn = pantherSpriteLeft[row][col];
+            // Wybieramy kolor: zapalony = zielony, zgaszony = tło
+            SDL_Color c = pixelOn ? (disabled ? COLOR_PANTHER_DISABLED : COLOR_PANTHER): COLOR_PATH;
+            SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
+            // Rysujemy kwadracik scaleX × scaleY
+            float drawX = x + col * scaleX;
+            float drawY = y + row * scaleY;
+            SDL_Rect rect;
+            rect.x = (int)drawX;
+            rect.y = (int)drawY;
+            rect.w = (int)scaleX;
+            rect.h = (int)scaleY;
+            SDL_RenderFillRect(renderer, &rect);
+        }
+    }
+}
+
+// Rysujemy pixel-art PANTERY w miejscu (x,y) o szerokości i wysokości
+// docelowej 20×20 (czyli skala 2.5, bo sprite ma 8×8).
+void drawPantherSpriteDown(SDL_Renderer* renderer, float x, float y, bool disabled)
+{
+    // Obliczamy skalę tak, by sprite 8×8 zmieścił się w 20×20
+    float scaleX = (float)PANTHER_WIDTH  / (float)SPRITE_WIDTH;   // 20 / 8 = 2.5
+    float scaleY = (float)PANTHER_HEIGHT / (float)SPRITE_HEIGHT;  // 20 / 8 = 2.5
+    for(int row = 0; row < SPRITE_HEIGHT; row++)
+    {
+        for(int col = 0; col < SPRITE_WIDTH; col++)
+        {
+            bool pixelOn = pantherSpriteDown[row][col];
+            // Wybieramy kolor: zapalony = zielony, zgaszony = tło
+            SDL_Color c = pixelOn ? (disabled ? COLOR_PANTHER_DISABLED : COLOR_PANTHER): COLOR_PATH;
+            SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
+            // Rysujemy kwadracik scaleX × scaleY
+            float drawX = x + col * scaleX;
+            float drawY = y + row * scaleY;
+            SDL_Rect rect;
+            rect.x = (int)drawX;
+            rect.y = (int)drawY;
+            rect.w = (int)scaleX;
+            rect.h = (int)scaleY;
+            SDL_RenderFillRect(renderer, &rect);
+        }
+    }
+}
+
+
 
 // Rysujemy pixel-art IKONA STARTU GRACZA w miejscu (x,y) o szerokości i wysokości
 // docelowej 20×20 (czyli skala 2.5, bo sprite ma 8×8).
