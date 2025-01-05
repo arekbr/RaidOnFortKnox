@@ -41,7 +41,7 @@ bool pantherIsDisabled = false;      // czy pantera jest w trybie „bezpiecznym
 
 int  pantherDisableTimer = 5;        // licznik czasu, ile jeszcze pantera będzie wyłączona.
 
-const int PANTHER_DISABLE_TIME = 360; // np. 180 klatek = ok. 3 sekundy (jeśli 60 FPS)
+const int PANTHER_DISABLE_TIME = 180; // np. 180 klatek = ok. 3 sekundy (jeśli 60 FPS)
 
 
 // Rozmiar okna
@@ -166,6 +166,23 @@ static bool gold2Sprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
     {0,0,0,0,0,0,0,0}
 };
 
+
+// ----------------- SPRITE STARTU (pixel-art) ---------
+// Rozmiar sprite'a (8x8) - to TYLKO do definicji tablicy
+// Tu zdefiniuj własny kształt 8×8. 
+// 1 = zapalony piksel, 0 = zgaszony (będzie kolorem tła).
+// Poniżej przykładowy (pseudolosowy) wzór, zmień do woli.
+static bool startSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
+{
+    {0,0,1,1,1,1,0,0},
+    {0,0,1,0,0,1,0,0},
+    {0,1,0,0,0,0,1,0},
+    {0,1,0,1,0,0,1,0},
+    {0,1,1,1,0,0,1,0},
+    {0,1,0,1,0,0,1,0},
+    {0,1,0,0,0,0,1,0},
+    {0,1,0,0,0,0,1,0}
+};
 
 // -----------------------------------------------------
 // Rysujemy pixel-art w miejscu (x,y) o szerokości i wysokości
@@ -308,6 +325,41 @@ void drawPantherSprite(SDL_Renderer* renderer, float x, float y, bool disabled)
         }
     }
 }
+
+// -----------------------------------------------------
+// Rysujemy pixel-art w miejscu (x,y) o szerokości i wysokości
+// docelowej 20×20 (czyli skala 2.5, bo sprite ma 8×8).
+void drawStartSprite(SDL_Renderer* renderer, float x, float y)
+{
+    // Obliczamy skalę tak, by sprite 8×8 zmieścił się w 20×20
+    float scaleX = (float)START_WIDTH  / (float)SPRITE_WIDTH;   // 20 / 8 = 2.5
+    float scaleY = (float)START_HEIGHT / (float)SPRITE_HEIGHT;  // 20 / 8 = 2.5
+
+    for(int row = 0; row < SPRITE_HEIGHT; row++)
+    {
+        for(int col = 0; col < SPRITE_WIDTH; col++)
+        {
+            bool pixelOn = startSprite[row][col];
+            // Wybieramy kolor: zapalony = zielony, zgaszony = tło
+            SDL_Color c = pixelOn ? COLOR_START : COLOR_PATH;
+
+            SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
+
+            // Rysujemy kwadracik scaleX × scaleY
+            float drawX = x + col * scaleX;
+            float drawY = y + row * scaleY;
+
+            SDL_Rect rect;
+            rect.x = (int)drawX;
+            rect.y = (int)drawY;
+            rect.w = (int)scaleX;
+            rect.h = (int)scaleY;
+
+            SDL_RenderFillRect(renderer, &rect);
+        }
+    }
+}
+
 
 // -----------------------------------------------------
 // (Opcjonalna) funkcja kolizji z rogami bounding-boxa
@@ -654,9 +706,10 @@ if (!pantherIsDisabled) {
                     drawGold2Sprite(renderer, x * CELL_SIZE, y * CELL_SIZE);
                 } else if (val == 5) {
                     drawRect(renderer, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE, COLOR_LIVES);
-                } else if (val == 6) {
-                    drawRect(renderer, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE, COLOR_START);
-                }  else {
+                } //else if (val == 6) {
+                    //drawRect(renderer, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE, COLOR_START);
+                //}  
+                else {
                     drawRect(renderer, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE, COLOR_PATH);
                 }
             }
@@ -671,6 +724,8 @@ if (!pantherIsDisabled) {
 
         // Rysowanie pantery
         drawPantherSprite(renderer, pantherX, pantherY, pantherIsDisabled);
+
+        drawStartSprite(renderer, 19 * CELL_SIZE, 0 * CELL_SIZE);
         // Wyświetlanie
         SDL_RenderPresent(renderer);
 
