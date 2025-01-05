@@ -603,24 +603,18 @@ int main(int argc, char* argv[])
                         hasGold = true;
                     }
                 }
-                else if (cellValue == 6) {
-                    if (hasGold) {
-                        std::cout << "Oddajesz zloto na start!\n";
-                        score++;
-                        hasGold = false;
-                    }
-                }
-
                 // kolizja ze startem
                         if (checkStartBoxCollision(posX, posY, PLAYER_WIDTH, PLAYER_HEIGHT,
                         posXstart, posYstart, START_WIDTH, START_HEIGHT)) {
                             if (hasGold) {
                                     std::cout << "Oddajesz zloto na start!\n";
+                                    score++;
                                     hasGold = false;}
                                  else {
                                     std::cout << "Nie masz złota!\n";
+                                    }
                         }
-             //   else if (cellValue == 5) {
+                else if (cellValue == 5) {
                     // Tu np. mechanika życia
                 }
             
