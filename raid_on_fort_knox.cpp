@@ -36,6 +36,14 @@ const int PANTHER_HEIGHT = 20;
 float pantherX = 10.0f * CELL_SIZE + (CELL_SIZE - PANTHER_WIDTH) / 2.0f;
 float pantherY =  6.0f * CELL_SIZE + (CELL_SIZE - PANTHER_HEIGHT)/ 2.0f;    
 
+
+bool pantherIsDisabled = false;      // czy pantera jest w trybie „bezpiecznym”?
+
+int  pantherDisableTimer = 5;        // licznik czasu, ile jeszcze pantera będzie wyłączona
+
+const int PANTHER_DISABLE_TIME = 180; // np. 180 klatek = ok. 3 sekundy (jeśli 60 FPS)
+
+
 // Rozmiar okna
 const int WINDOW_WIDTH  = 550;
 const int WINDOW_HEIGHT = 600;
@@ -52,6 +60,8 @@ const SDL_Color COLOR_START  = { 255, 255, 0, 255 }; // Żółty
 const SDL_Color COLOR_GOLD   = { 255, 215, 0, 255 }; // Złoty
 const SDL_Color COLOR_GOLD2  = { 255, 115, 66,255 }; // Złoto "podwójne"
 const SDL_Color COLOR_PANTHER = { 255, 0, 0, 255 }; // Pantera
+const SDL_Color COLOR_PANTHER_DISABLED = { 255, 255, 11, 255 }; // Pantera pod kolizji
+
 
 // ----------------- POZYCJA GRACZA --------------------
 float posX, posY;          // Pozycja w pikselach (lewy górny róg)
@@ -61,6 +71,9 @@ float targetPosX, targetPosY;
 
 // Czy obecnie animujemy ruch
 bool  isMoving = false;
+
+// ----------------- POZYCJA PANTERY --------------------
+bool justCollidedWithPanther = false;
 
 // Kierunek w sensie kafelków (np. (1,0) to w prawo)
 int   dirCellX = 0, dirCellY = 0;
@@ -264,7 +277,7 @@ void drawGold2Sprite(SDL_Renderer* renderer, float x, float y)
 // -----------------------------------------------------
 // Rysujemy pixel-art w miejscu (x,y) o szerokości i wysokości
 // docelowej 20×20 (czyli skala 2.5, bo sprite ma 8×8).
-void drawPantherSprite(SDL_Renderer* renderer, float x, float y)
+void drawPantherSprite(SDL_Renderer* renderer, float x, float y, bool disabled)
 {
     // Obliczamy skalę tak, by sprite 8×8 zmieścił się w 20×20
     float scaleX = (float)PANTHER_WIDTH  / (float)SPRITE_WIDTH;   // 20 / 8 = 2.5
@@ -276,8 +289,9 @@ void drawPantherSprite(SDL_Renderer* renderer, float x, float y)
         {
             bool pixelOn = pantherSprite[row][col];
             // Wybieramy kolor: zapalony = zielony, zgaszony = tło
-            SDL_Color c = pixelOn ? COLOR_PANTHER : COLOR_PATH;
-
+            SDL_Color c = pixelOn 
+                  ? (disabled ? COLOR_PANTHER_DISABLED : COLOR_PANTHER)
+                  : COLOR_PATH;
             SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
 
             // Rysujemy kwadracik scaleX × scaleY
@@ -590,24 +604,33 @@ int main(int argc, char* argv[])
                 else if (cellValue == 5) {
                     // Tu np. mechanika życia
                 }
-
-// Kolizja z panterą
-if (checkBoxCollision(posX, posY, PLAYER_WIDTH, PLAYER_HEIGHT,
-                      pantherX, pantherY, PANTHER_WIDTH, PANTHER_HEIGHT)) 
+if (!pantherIsDisabled) {
+                // Kolizja z panterą
+                        if (checkBoxCollision(posX, posY, PLAYER_WIDTH, PLAYER_HEIGHT,
+                        pantherX, pantherY, PANTHER_WIDTH, PANTHER_HEIGHT)) 
                       {
-    if (hasGold) {
-        std::cout << "Złapała Cię pantera. Tracisz złoto!\n";
-        hasGold = false;
-    } else {
-        std::cout << "Złapała Cię pantera. Tracisz życie!\n";
-        // Usuwasz jedno życie z labiryntu lub zmniejszasz licznik "lives"
-        maze[0][2] = 0;
-    }
-}
-
+                            if (!justCollidedWithPanther) {
+                                if (hasGold) {
+                                    justCollidedWithPanther = true;
+                                    pantherIsDisabled = true;
+                                    pantherDisableTimer = PANTHER_DISABLE_TIME;
+                                    std::cout << "Złapała Cię pantera. Tracisz złoto!\n";
+                                    hasGold = false;
+                                } else {
+                                    std::cout << "Złapała Cię pantera. Tracisz życie!\n";
+                                    // Usuwasz jedno życie z labiryntu lub zmniejszasz licznik "lives"
+                                    maze[0][2] = 0;
+                                    }
+                            } else {
+    // tu "else" jest wobec warunku cellValue == 7
+    // tzn. jeżeli to *nie* pantera, to znaczy, że gracz stoi gdzieś indziej
+    // i można zresetować justCollidedWithPanther
+                                justCollidedWithPanther = false;
+                                }
+                        }
+                    }
             }
-        }
-
+        }        
         // 4) Renderowanie
         SDL_SetRenderDrawColor(renderer, COLOR_PATH.r, COLOR_PATH.g, COLOR_PATH.b, COLOR_PATH.a);
         SDL_RenderClear(renderer);
@@ -640,8 +663,7 @@ if (checkBoxCollision(posX, posY, PLAYER_WIDTH, PLAYER_HEIGHT,
         drawPlayerSprite(renderer, posX, posY);
 
         // Rysowanie pantery
-        drawPantherSprite(renderer, pantherX, pantherY);
-
+        drawPantherSprite(renderer, pantherX, pantherY, pantherIsDisabled);
         // Wyświetlanie
         SDL_RenderPresent(renderer);
 
