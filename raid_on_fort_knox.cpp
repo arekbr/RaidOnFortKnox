@@ -176,7 +176,10 @@ static bool startSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
 
 // Rysujemy pixel-art GRACZA w miejscu (x,y) o szerokości i wysokości
 // docelowej 20×20 (czyli skala 2.5, bo sprite ma 8×8).
-void drawPlayerSprite(SDL_Renderer* renderer, float x, float y)
+
+
+
+/*void drawPlayerSprite(SDL_Renderer* renderer, float x, float y)
 {
     // Obliczamy skalę tak, by sprite 8×8 zmieścił się w 20×20
     float scaleX = (float)PLAYER_WIDTH  / (float)SPRITE_WIDTH;   // 20 / 8 = 2.5
@@ -198,6 +201,36 @@ void drawPlayerSprite(SDL_Renderer* renderer, float x, float y)
             rect.y = (int)drawY;
             rect.w = (int)scaleX;
             rect.h = (int)scaleY;
+            SDL_RenderFillRect(renderer, &rect);
+        }
+    }
+}
+*/
+
+
+void drawPlayerSprite(SDL_Renderer* renderer, int x, int y)
+{
+    // Obliczamy skalę w pikselach
+    int scaleX = PLAYER_WIDTH / SPRITE_WIDTH;   // 20 / 8 = 2
+    int scaleY = PLAYER_HEIGHT / SPRITE_HEIGHT; // 20 / 8 = 2
+
+    // Rysujemy sprite
+    for (int row = 0; row < SPRITE_HEIGHT; row++)
+    {
+        for (int col = 0; col < SPRITE_WIDTH; col++)
+        {
+            bool pixelOn = playerSprite[row][col];
+
+            // Wybieramy kolor: zapalony = zielony, zgaszony = tło
+            SDL_Color c = pixelOn ? COLOR_PLAYER : COLOR_PATH;
+            SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
+
+            // Rysujemy dokładnie dopasowany prostokąt
+            SDL_Rect rect;
+            rect.x = x + col * scaleX;
+            rect.y = y + row * scaleY;
+            rect.w = scaleX;
+            rect.h = scaleY;
             SDL_RenderFillRect(renderer, &rect);
         }
     }
