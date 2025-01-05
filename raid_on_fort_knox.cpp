@@ -29,6 +29,9 @@ const int PANTHER_HEIGHT    = 20;
 float pantherX = 10.0f * CELL_SIZE + (CELL_SIZE - PANTHER_WIDTH) / 2.0f;
 float pantherY =  6.0f * CELL_SIZE + (CELL_SIZE - PANTHER_HEIGHT)/ 2.0f;    
 
+//pozycja startu
+float posXstart, posYstart;
+
 // czy pantera jest w trybie „bezpiecznym”?
 bool pantherIsDisabled = false;      
 
@@ -74,6 +77,18 @@ int   dirCellX = 0, dirCellY = 0;
 
 // SPRAWDZENIE KOLIZJI Z BOUNDING-BOXEM PANTERY
 bool checkPantherBoxCollision(float x1, float y1, float w1, float h1,
+                       float x2, float y2, float w2, float h2)
+{
+    // If one rectangle is on left side of other
+    if (x1 + w1 <= x2) return false;
+    if (x2 + w2 <= x1) return false;
+    if (y1 + h1 <= y2) return false;
+    if (y2 + h2 <= y1) return false;
+    return true;
+}
+
+// SPRAWDZENIE KOLIZJI Z BOUNDING-BOXEM STARTU
+bool checkStartBoxCollision(float x1, float y1, float w1, float h1,
                        float x2, float y2, float w2, float h2)
 {
     // If one rectangle is on left side of other
@@ -468,8 +483,8 @@ int main(int argc, char* argv[])
     posX = 19.0f * CELL_SIZE + (CELL_SIZE - PLAYER_WIDTH) / 2.0f;
     posY =  1.0f * CELL_SIZE + (CELL_SIZE - PLAYER_HEIGHT)/ 2.0f;
 
-  //  posXGold = 19.0f * CELL_SIZE + (CELL_SIZE - GOLD_WIDTH) / 2.0f;
-  //  posYGold =  1.0f * CELL_SIZE + (CELL_SIZE - GOLD_HEIGHT)/ 2.0f;
+    posXstart = 19.0f * CELL_SIZE + (CELL_SIZE - GOLD_WIDTH) / 2.0f;
+    posYstart =  0.0f * CELL_SIZE + (CELL_SIZE - GOLD_HEIGHT)/ 2.0f;
     
     // Początkowo stoimy w miejscu
     targetPosX = posX;
@@ -595,9 +610,20 @@ int main(int argc, char* argv[])
                         hasGold = false;
                     }
                 }
-                else if (cellValue == 5) {
+
+                // kolizja ze startem
+                        if (checkStartBoxCollision(posX, posY, PLAYER_WIDTH, PLAYER_HEIGHT,
+                        posXstart, posYstart, START_WIDTH, START_HEIGHT)) {
+                            if (hasGold) {
+                                    std::cout << "Oddajesz zloto na start!\n";
+                                    hasGold = false;}
+                                 else {
+                                    std::cout << "Nie masz złota!\n";
+                        }
+             //   else if (cellValue == 5) {
                     // Tu np. mechanika życia
                 }
+            
 if (!pantherIsDisabled) {
                 // Kolizja z panterą
                         if (checkPantherBoxCollision(posX, posY, PLAYER_WIDTH, PLAYER_HEIGHT,
