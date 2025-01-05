@@ -998,10 +998,21 @@ if (!pantherIsDisabled) {
         renderText(renderer, font, scoreText, 5 * CELL_SIZE, 0, {255, 255, 255, 255});
 
         // *** RYSOWANIE GRACZA: pixel-art sprite ***
-        drawPlayerSprite(renderer, posX, posY);
 
+        // sprawdzamy, czy gracz idzie w lewo, prawo, górę, dół
+        if (dirCellX == 1) {
+            drawPlayerSpriteRight(renderer, posX, posY);
+        } else if (dirCellX == -1) {
+            drawPlayerSpriteLeft(renderer, posX, posY);
+        } else if (dirCellY == 1) {
+            drawPlayerSpriteDown(renderer, posX, posY);
+        } else if (dirCellY == -1) {
+            drawPlayerSprite(renderer, posX, posY);
+     }   //} else {
+        //drawPlayerSprite(renderer, posX, posY);
+        
         // Rysowanie pantery
-        drawPantherSprite(renderer, pantherX, pantherY, pantherIsDisabled);
+        //drawPantherSprite(renderer, pantherX, pantherY, pantherIsDisabled);
 
         drawStartSprite(renderer, 19 * CELL_SIZE, 0 * CELL_SIZE);
         // Wyświetlanie
