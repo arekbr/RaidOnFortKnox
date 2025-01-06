@@ -4,7 +4,69 @@
 #include <iostream>
 #include <cmath>    // std::sqrt
 #include <string>
+#include <cstdlib>
+#include <ctime>
 
+class MazeGenerator {
+public:
+    // Konstruktor
+    MazeGenerator(const std::vector<std::vector<int>>& templateMaze)
+        : mazeTemplate(templateMaze),
+          rows(templateMaze.size()),
+          cols(templateMaze[0].size()) {
+        std::srand(std::time(nullptr)); // Ustawienie seed dla RNG
+    }
+
+    // Funkcja generująca pojedynczy labirynt
+    std::vector<std::vector<int>> generateMaze() {
+        std::vector<std::vector<int>> maze = mazeTemplate; // Kopia szablonu
+
+        // Randomizowanie zawartości labiryntu (złoto i drogi)
+        for (int i = 1; i < rows - 1; ++i) {
+            for (int j = 1; j < cols - 1; ++j) {
+                if (maze[i][j] != 1) { // Nie zmieniaj ścian
+                    maze[i][j] = randomElement({0, 4, 3}); // Losuj drogę lub złoto
+                }
+            }
+        }
+
+        // Upewnienie się, że labirynt jest możliwy do przejścia
+        ensureConnectivity(maze);
+
+        return maze;
+    }
+
+private:
+    const std::vector<std::vector<int>>& mazeTemplate;
+    int rows;
+    int cols;
+
+    // Funkcja zwracająca losowy element z wektora
+    int randomElement(const std::vector<int>& elements) {
+        return elements[std::rand() % elements.size()];
+    }
+
+    // Funkcja zapewniająca, że labirynt jest możliwy do przejścia
+    void ensureConnectivity(std::vector<std::vector<int>>& maze) {
+        for (int i = 1; i < rows - 1; ++i) {
+            for (int j = 1; j < cols - 1; ++j) {
+                if (maze[i][j] == 0) {
+                    bool isolated = true;
+                    for (auto [dx, dy] : std::vector<std::pair<int, int>>{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}) {
+                        int ni = i + dx, nj = j + dy;
+                        if (maze[ni][nj] != 1) {
+                            isolated = false;
+                            break;
+                        }
+                    }
+                    if (isolated) {
+                        maze[i][j] = 1; // Zamień izolowaną drogę na ścianę
+                    }
+                }
+            }
+        }
+    }
+};
 
 // ----------------- USTAWIENIA ------------------------
 
@@ -724,6 +786,36 @@ void renderText(SDL_Renderer* renderer, TTF_Font* font, const std::string& text,
 // GŁÓWNA PĘTLA PROGRAMU-----------------------------------------------------
 int main(int argc, char* argv[])
 {
+
+// Szablon labiryntu
+    std::vector<std::vector<int>> templateMaze = {
+        {5, 5, 5, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1}, 
+        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1},
+        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1},
+        {1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1},
+        {1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1},
+        {1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1},
+        {1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1},
+        {1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1},
+        {1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1},
+        {1, 0, 0, 0, 0, 4, 3, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1},
+        {1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1},
+        {1, 0, 0, 0, 0, 4, 3, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1},
+        {1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1},
+        {1, 0, 0, 0, 0, 4, 3, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1},
+        {1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1},
+        {1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1},
+        {1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1},
+        {1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1},
+        {1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1},
+        {1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1},
+        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+    };
+
+
+
     // Licznik punktów, flaga złota
     int score = 0;
     bool hasGold = false;
@@ -774,8 +866,8 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    // Labirynt (1=ściana, 0=ścieżka, 5=życie)
-    std::vector<std::vector<int>> maze = {
+    // Labirynt 1 (1=ściana, 0=ścieżka, 5=życie, 4 - złoto, 3 - złoto podwójne)
+    std::vector<std::vector<int>> maze2 = {
         {5, 5, 5, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1}, 
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1},
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1},
@@ -801,6 +893,35 @@ int main(int argc, char* argv[])
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
     };
+// Labirynt 1 (1=ściana, 0=ścieżka, 5=życie, 4 - złoto, 3 - złoto podwójne)
+    std::vector<std::vector<int>> maze = {
+    
+{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+{1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,1,1},
+{1,0,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,0,1,1},
+{1,0,0,3,1,0,0,0,1,0,1,0,1,0,0,0,0,0,0,0,1,1},
+{1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,1,1,1},
+{1,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,1},
+{1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1},
+{1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,1,1},
+{1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1},
+{1,0,0,0,0,0,1,4,0,0,0,0,0,0,1,0,1,0,1,0,1,1},
+{1,1,1,1,1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,0,1,1},
+{1,0,0,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0,1,0,1,1},
+{1,0,1,0,1,1,1,0,1,0,1,0,1,0,1,1,1,0,1,0,1,1},
+{1,0,1,0,1,0,0,0,1,0,1,0,1,0,1,4,1,0,1,0,1,1},
+{1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,1},
+{1,0,1,0,0,0,1,0,0,0,1,0,1,0,1,0,1,0,1,0,1,1},
+{1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1},
+{1,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,1,1},
+{1,0,1,0,1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,0,1,1},
+{1,0,1,0,0,0,1,0,1,4,1,0,0,0,1,0,1,0,1,0,1,1},
+{1,0,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1},
+{1,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,1},
+{1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1},
+{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+
+          };
 
     // Startowa pozycja (wycentrowana w kafelku 19,1)
     posX = 19.0f * CELL_SIZE + (CELL_SIZE - PLAYER_WIDTH) / 2.0f;
@@ -982,6 +1103,8 @@ if (!pantherIsDisabled) {
         // 4) Renderowanie
         SDL_SetRenderDrawColor(renderer, COLOR_PATH.r, COLOR_PATH.g, COLOR_PATH.b, COLOR_PATH.a);
         SDL_RenderClear(renderer);
+
+
 
         // Rysowanie labiryntu
         for (size_t y = 0; y < maze.size(); ++y) {
