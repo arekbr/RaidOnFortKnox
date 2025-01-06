@@ -88,8 +88,15 @@ const int PANTHER_HEIGHT    = 20;
 
 
 // pozycja pantery
-float pantherX = 10.0f * CELL_SIZE + (CELL_SIZE - PANTHER_WIDTH) / 2.0f;
+float pantherX = 11.0f * CELL_SIZE + (CELL_SIZE - PANTHER_WIDTH) / 2.0f;
 float pantherY =  6.0f * CELL_SIZE + (CELL_SIZE - PANTHER_HEIGHT)/ 2.0f;    
+
+// Kierunek pantery w sensie pikseli (np. (1,0) to w prawo)
+float pantherSpeed = 1.0f; // Prędkość ruchu w pikselach/klatkę
+int pantherDirX = 0;      // Kierunek na osi X: 1 = w prawo, -1 = w lewo
+int pantherDirY = 1;      // Kierunek na osi Y: 1 = w dół, -1 = w górę
+
+
 
 //pozycja startu
 float posXstart, posYstart;
@@ -136,6 +143,8 @@ bool justCollidedWithPanther = false;
 
 // Kierunek w sensie kafelków (np. (1,0) to w prawo)
 int   dirCellX = 0, dirCellY = 0;
+
+
 
 // SPRAWDZENIE KOLIZJI Z BOUNDING-BOXEM PANTERY
 bool checkPantherBoxCollision(float x1, float y1, float w1, float h1,
@@ -898,7 +907,7 @@ int main(int argc, char* argv[])
     
 {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1},
 {1,3,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1},
-{1,0,1,0,1,1,1,1,1,0,1,1,1,0,1,0,1,1,1,1,1,1},
+{1,0,1,0,1,1,1,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1},
 {1,0,1,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,1},
 {1,0,1,0,1,0,1,0,1,1,1,0,1,1,1,1,1,0,1,0,1,1},
 {1,0,1,0,1,0,1,0,0,0,1,0,1,0,0,0,0,0,1,0,1,1},
@@ -1097,9 +1106,27 @@ if (!pantherIsDisabled) {
                                 justCollidedWithPanther = false;
                                 }
                         }
+                                /////////////////////////// ruszanie pantery
+                                // Przesunięcie pantery w bieżącym kierunku
+                                pantherX += pantherSpeed * pantherDirX; // Ruch w poziomie
+                                pantherY += pantherSpeed * pantherDirY; // Ruch w pionie
+
+                                // Sprawdzanie kolizji z korytarzem (ścianami)
+                                int cellX = (int)(pantherX / CELL_SIZE); // Pozycja w siatce
+                                int cellY = (int)(pantherY / CELL_SIZE);
+
+                                // Jeśli pantera napotka ścianę, zmień kierunek
+                                if (maze[cellY][cellX] == 1) { // 1 = ściana
+                                if (pantherDirX != 0) { // Porusza się w poziomie
+                                pantherDirX *= -1; // Zmiana kierunku na osi X
+                                } else if (pantherDirY != 0) { // Porusza się w pionie
+                                pantherDirY *= -1; // Zmiana kierunku na osi Y
+                                }
+                            }      
+                                ////////////////////////////////////////// koniec ruszanie pantery
                     }
             }
-        }        
+    }        
         // 4) Renderowanie
         SDL_SetRenderDrawColor(renderer, COLOR_PATH.r, COLOR_PATH.g, COLOR_PATH.b, COLOR_PATH.a);
         SDL_RenderClear(renderer);
@@ -1145,12 +1172,12 @@ if (!pantherIsDisabled) {
             drawPlayerSpriteDown(renderer, posX, posY);
         } else if (dirCellY == -1) {
             drawPlayerSprite(renderer, posX, posY);
-     }   //} else {
+        //} else {
         //drawPlayerSprite(renderer, posX, posY);
-        
+        }     
         // Rysowanie pantery
-        //drawPantherSprite(renderer, pantherX, pantherY, pantherIsDisabled);
-
+        drawPantherSprite(renderer, pantherX, pantherY, pantherIsDisabled);
+        
         drawStartSprite(renderer, 19 * CELL_SIZE, 0 * CELL_SIZE);
         // Wyświetlanie
         SDL_RenderPresent(renderer);
