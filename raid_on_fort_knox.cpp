@@ -738,6 +738,37 @@ bool checkCollisionWithWalls(float newX, float newY, const std::vector<std::vect
     return false;
 }
 
+
+// (Opcjonalna) funkcja kolizji z rogami bounding-boxa pantery
+bool checkPantherCollisionWithWalls(float newX, float newY, const std::vector<std::vector<int>>& maze) 
+{
+    float left   = newX;
+    float top    = newY;
+    float right  = newX + PANTHER_WIDTH  - 1;
+    float bottom = newY + PANTHER_HEIGHT - 1;
+
+    auto isWallAtPixel = [&](float px, float py) {
+        if (px < 0 || py < 0) return true; // poza mapą
+        int tileX = (int)(px / CELL_SIZE);
+        int tileY = (int)(py / CELL_SIZE);
+        if (tileY < 0 || tileY >= (int)maze.size() ||
+            tileX < 0 || tileX >= (int)maze[tileY].size())
+        {
+            return true; // poza tablicą
+        }
+        return (maze[tileY][tileX] == 1);
+    };
+
+    if (isWallAtPixel(left,  top))    return true;
+    if (isWallAtPixel(right, top))    return true;
+    if (isWallAtPixel(left,  bottom)) return true;
+    if (isWallAtPixel(right, bottom)) return true;
+
+    return false;
+}
+
+
+
 // Funkcja do obliczenia, dokąd można dojść w danym kierunku (dx, dy) aż do ściany.
 void computeTargetCell(
     const std::vector<std::vector<int>>& maze,
@@ -1111,7 +1142,7 @@ if (!pantherIsDisabled) {
                                 pantherX += pantherSpeed * pantherDirX; // Ruch w poziomie
                                 pantherY += pantherSpeed * pantherDirY; // Ruch w pionie
 
-                                // Sprawdzanie kolizji z korytarzem (ścianami)
+                               /* // Sprawdzanie kolizji z korytarzem (ścianami)
                                 int cellX = (int)(pantherX / CELL_SIZE); // Pozycja w siatce
                                 int cellY = (int)(pantherY / CELL_SIZE);
 
@@ -1123,7 +1154,20 @@ if (!pantherIsDisabled) {
                                 pantherDirY *= -1; // Zmiana kierunku na osi Y
                                 }
                             }      
-                                ////////////////////////////////////////// koniec ruszanie pantery
+                                */ ////////////////////////////////////////// koniec ruszanie pantery
+                    
+// Jeśli pantera napotka ścianę, zmień kierunek
+if (checkPantherCollisionWithWalls(pantherX, pantherY, maze)) {
+    if (pantherDirX != 0) { // Porusza się w poziomie
+        pantherDirX *= -1; // Zmiana kierunku na osi X
+        pantherX += pantherSpeed * pantherDirX; // Cofnięcie o krok
+    } else if (pantherDirY != 0) { // Porusza się w pionie
+        pantherDirY *= -1; // Zmiana kierunku na osi Y
+        pantherY += pantherSpeed * pantherDirY; // Cofnięcie o krok
+    }
+}                    
+
+
                     }
             }
     }        
