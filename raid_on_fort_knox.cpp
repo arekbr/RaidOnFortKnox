@@ -7,12 +7,18 @@
 #include <cstdlib>
 #include <ctime>
 
+#include "include/Sprites.h"
+
 // ----------------- USTAWIENIA ------------------------
 
 // Rozmiar kafelka (tunel ma 1 kafelek szerokości)
 const int CELL_SIZE = 24;
 
 // Rozmiar "logiczne" sprajtów (używane do snapowania i kolizji bounding-box)
+// const int SPRITE_WIDTH do wykorzystania być może później
+const int CELL_SPRITE_WIDTH = 20;
+const int CELL_SPRITE_HEIGHT = 20;
+
 const int PLAYER_WIDTH = 20;
 const int PLAYER_HEIGHT = 20;
 const int START_WIDTH = 20;
@@ -25,16 +31,16 @@ const int PANTHER_WIDTH = 20;
 const int PANTHER_HEIGHT = 20;
 
 // pozycja pantery
-float pantherX = 11.0f * CELL_SIZE + (CELL_SIZE - PANTHER_WIDTH) / 2.0f;
-float pantherY = 6.0f * CELL_SIZE + (CELL_SIZE - PANTHER_HEIGHT) / 2.0f;
+float posPantherX = 11.0f * CELL_SIZE + (CELL_SIZE - PANTHER_WIDTH) / 2.0f;
+float posPantherY = 6.0f * CELL_SIZE + (CELL_SIZE - PANTHER_HEIGHT) / 2.0f;
 
 // Kierunek pantery w sensie pikseli (np. (1,0) to w prawo)
 float pantherSpeed = 1.0f; // Prędkość ruchu w pikselach/klatkę
 int pantherDirX = 0;       // Kierunek na osi X: 1 = w prawo, -1 = w lewo
 int pantherDirY = 1;       // Kierunek na osi Y: 1 = w dół, -1 = w górę
 
-// pozycja startu
-float posXstart, posYstart;
+// pozycja drzwi startowych (skrarbca)
+float posStartX, posStartY;
 
 // czy pantera jest w trybie „bezpiecznym”?
 bool pantherIsDisabled = false;
@@ -46,8 +52,8 @@ int pantherDisableTimer = 5;
 const int PANTHER_DISABLE_TIME = 180;
 
 // Rozmiar okna graficznego
-const int WINDOW_WIDTH = 550;
-const int WINDOW_HEIGHT = 600;
+const int WINDOW_WIDTH = 530;
+const int WINDOW_HEIGHT = 580;
 
 // Szybkość ruchu w pikselach na klatkę
 float speed = 2.0f;
@@ -64,10 +70,10 @@ const SDL_Color COLOR_PANTHER = {255, 0, 0, 255};             // Pantera
 const SDL_Color COLOR_PANTHER_DISABLED = {255, 255, 11, 255}; // Pantera pod kolizji
 
 // ----------------- POZYCJA GRACZA Pozycja w pikselach (lewy górny róg)--------------------
-float posX, posY;
+float posPlayerX, posPlayerY;
 
 // Pozycja docelowa w pikselach
-float targetPosX, targetPosY;
+float targetPlayerPosX, targetPlayerPosY;
 
 // Czy obecnie animujemy ruch
 bool isMoving = false;
@@ -109,215 +115,6 @@ bool checkStartBoxCollision(float x1, float y1, float w1, float h1,
         return false;
     return true;
 }
-
-// ----------------- SPRITE GRACZA (pixel-art) ---------
-// Rozmiar sprite'a (8x8) - to TYLKO do definicji tablicy
-static const int SPRITE_WIDTH = 8;
-static const int SPRITE_HEIGHT = 8;
-// kształt 8×8.
-// 1 = zapalony piksel, 0 = zgaszony (będzie kolorem tła).
-
-static bool playerSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
-    {
-        {0, 0, 1, 1, 1, 1, 0, 0},
-        {0, 1, 0, 1, 1, 0, 1, 0},
-        {0, 0, 1, 1, 1, 1, 0, 0},
-        {0, 0, 0, 1, 1, 0, 0, 1},
-        {0, 1, 1, 1, 1, 1, 1, 0},
-        {1, 0, 1, 1, 1, 1, 0, 1},
-        {0, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 0, 0, 0, 0, 0, 0}};
-
-static bool playerSpriteRight[SPRITE_HEIGHT][SPRITE_WIDTH] =
-    {
-        {1, 0, 1, 0, 0, 0, 0, 0},
-        {1, 1, 0, 1, 0, 0, 1, 0},
-        {0, 1, 1, 1, 0, 1, 0, 1},
-        {0, 1, 1, 1, 1, 1, 1, 1},
-        {0, 1, 1, 1, 1, 1, 1, 1},
-        {0, 1, 1, 1, 0, 1, 0, 1},
-        {0, 1, 0, 1, 0, 0, 1, 0},
-        {0, 1, 1, 0, 1, 0, 0, 0}};
-
-static bool playerSpriteDown[SPRITE_HEIGHT][SPRITE_WIDTH] =
-    {
-        {0, 0, 0, 0, 0, 0, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 0},
-        {1, 0, 1, 1, 1, 1, 0, 1},
-        {0, 1, 1, 1, 1, 1, 1, 0},
-        {1, 0, 0, 1, 1, 0, 0, 0},
-        {0, 0, 1, 1, 1, 1, 0, 0},
-        {0, 1, 0, 1, 1, 0, 1, 0},
-        {0, 0, 1, 1, 1, 1, 0, 0}
-
-};
-
-static bool playerSpriteLeft[SPRITE_HEIGHT][SPRITE_WIDTH] =
-    {
-        {0, 0, 0, 1, 0, 1, 1, 0},
-        {0, 1, 0, 0, 1, 0, 1, 0},
-        {1, 0, 1, 0, 1, 1, 1, 0},
-        {1, 1, 1, 1, 1, 1, 1, 0},
-        {1, 1, 1, 1, 1, 1, 1, 0},
-        {1, 0, 1, 0, 1, 1, 1, 0},
-        {0, 1, 0, 0, 1, 0, 1, 1},
-        {0, 0, 0, 0, 0, 1, 0, 1}
-
-};
-
-// ----------------- SPRITE PANTERY (pixel-art) ---------
-// KSZTAŁT 8×8.
-static bool pantherSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
-    {
-        {0, 0, 1, 0, 0, 1, 0, 0},
-        {0, 0, 1, 1, 1, 1, 0, 0},
-        {0, 1, 0, 1, 1, 0, 1, 0},
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {0, 1, 1, 1, 1, 1, 1, 0},
-        {0, 1, 1, 1, 1, 1, 1, 0},
-        {0, 0, 1, 1, 1, 1, 0, 0},
-        {0, 0, 0, 0, 1, 0, 0, 0} // tylne łapy
-};
-
-// ----------------- SPRITE PANTERY w prawo (pixel-art) ---------
-// KSZTAŁT 8×8.
-static bool pantherSpriteRight[SPRITE_HEIGHT][SPRITE_WIDTH] =
-    {
-        {0, 0, 0, 0, 1, 0, 0, 0},
-        {0, 0, 1, 1, 1, 1, 0, 0},
-        {0, 1, 1, 1, 1, 0, 1, 1},
-        {0, 1, 1, 1, 1, 1, 1, 0},
-        {1, 1, 1, 1, 1, 1, 1, 0},
-        {0, 1, 1, 1, 1, 0, 1, 1},
-        {0, 0, 1, 1, 1, 1, 0, 0},
-        {0, 0, 0, 0, 1, 0, 0, 0}};
-
-// ----------------- SPRITE PANTERY w lewo (pixel-art) ---------
-// KSZTAŁT 8×8.
-static bool pantherSpriteLeft[SPRITE_HEIGHT][SPRITE_WIDTH] =
-    {
-        {0, 0, 0, 1, 0, 0, 0, 0},
-        {0, 0, 1, 1, 1, 1, 0, 0},
-        {1, 1, 0, 1, 1, 1, 1, 0},
-        {0, 1, 1, 1, 1, 1, 1, 1},
-        {0, 1, 1, 1, 1, 1, 1, 0},
-        {1, 1, 0, 1, 1, 1, 1, 0},
-        {0, 0, 1, 1, 1, 1, 0, 0},
-        {0, 0, 0, 1, 0, 0, 0, 0}};
-
-// ----------------- SPRITE PANTERY w dół (pixel-art) ---------
-// KSZTAŁT 8×8.
-static bool pantherSpriteDown[SPRITE_HEIGHT][SPRITE_WIDTH] =
-    {
-        {0, 0, 0, 0, 1, 0, 0, 0},
-        {0, 0, 1, 1, 1, 1, 0, 0},
-        {0, 1, 1, 1, 1, 1, 1, 0},
-        {0, 1, 1, 1, 1, 1, 1, 0},
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {0, 1, 0, 1, 1, 0, 1, 0},
-        {0, 0, 1, 1, 1, 1, 0, 0},
-        {0, 0, 1, 0, 0, 1, 0, 0}
-
-};
-
-/*Funkcja obracanie(tablica):
-    m = liczba_wierszy(tablica)
-    n = liczba_kolumn(tablica)
-
-    Stwórz nowa_tablica o wymiarach [n][m] (odwrócone wymiary)
-
-    Dla każdego i w zakresie [0, m-1]:
-        Dla każdego j w zakresie [0, n-1]:
-            nowa_tablica[j][m-1-i] = tablica[i][j]
-
-    Zwróć nowa_tablica
-*/
-std::vector<std::vector<int>> obracanie(std::vector<std::vector<int>> maze)
-{
-    int m = maze.size();
-    int n = maze[0].size();
-    std::vector<std::vector<int>> nowa_tablica(n, std::vector<int>(m));
-    for (int i = 0; i < m; i++)
-    {
-        for (int j = 0; j < n; j++)
-        {
-            nowa_tablica[j][m - 1 - i] = maze[i][j];
-        }
-    }
-    return nowa_tablica;
-}
-
-// ----------------- SPRITE ZŁOTA (pixel-art) ---------
-// Rozmiar sprite'a (8x8) - to TYLKO do definicji tablicy
-// KSZTAŁT 8×8.
-static bool goldSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
-    {
-        {1, 0, 0, 0, 0, 0, 0, 1},
-        {0, 1, 0, 0, 0, 0, 1, 0},
-        {0, 0, 1, 0, 0, 1, 0, 0},
-        {0, 1, 1, 1, 1, 1, 1, 0},
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {0, 1, 1, 1, 1, 1, 1, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0}};
-
-// ----------------- SPRITE ZŁOTA podwojnego (pixel-art) ---------
-// KSZTAŁT 8×8.
-static bool gold2Sprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
-    {
-        {1, 0, 0, 0, 0, 0, 0, 1},
-        {0, 1, 0, 0, 0, 0, 1, 0},
-        {0, 0, 1, 0, 0, 1, 0, 0},
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {0, 1, 1, 1, 1, 1, 1, 0},
-        {1, 0, 0, 0, 0, 0, 0, 1},
-        {0, 0, 0, 0, 0, 0, 0, 0}};
-
-// ----------------- SPRITE STARTU (pixel-art) ---------
-// KSZTAŁT 8×8.
-static bool startSprite[SPRITE_HEIGHT][SPRITE_WIDTH] =
-    {
-        {0, 0, 1, 1, 1, 1, 0, 0},
-        {0, 0, 1, 0, 0, 1, 0, 0},
-        {0, 1, 0, 0, 0, 0, 1, 0},
-        {0, 1, 0, 1, 0, 0, 1, 0},
-        {0, 1, 1, 1, 0, 0, 1, 0},
-        {0, 1, 0, 1, 0, 0, 1, 0},
-        {0, 1, 0, 0, 0, 0, 1, 0},
-        {0, 1, 0, 0, 0, 0, 1, 0}};
-
-// Rysujemy pixel-art GRACZA w miejscu (x,y) o szerokości i wysokości
-// docelowej 20×20 (czyli skala 2.5, bo sprite ma 8×8).
-// float dla wersji postaci z liniami pomiedzy pikselami
-
-/*void drawPlayerSprite(SDL_Renderer* renderer, float x, float y)
-{
-    // Obliczamy skalę tak, by sprite 8×8 zmieścił się w 20×20
-    float scaleX = (float)PLAYER_WIDTH  / (float)SPRITE_WIDTH;   // 20 / 8 = 2.5
-    float scaleY = (float)PLAYER_HEIGHT / (float)SPRITE_HEIGHT;  // 20 / 8 = 2.5
-
-    for(int row = 0; row < SPRITE_HEIGHT; row++)
-    {
-        for(int col = 0; col < SPRITE_WIDTH; col++)
-        {
-            bool pixelOn = playerSprite[row][col];
-            // Wybieramy kolor: zapalony = zielony, zgaszony = tło
-            SDL_Color c = pixelOn ? COLOR_PLAYER : COLOR_PATH;
-            SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
-            // Rysujemy kwadracik scaleX × scaleY
-            float drawX = x + col * scaleX;
-            float drawY = y + row * scaleY;
-            SDL_Rect rect;
-            rect.x = (int)drawX;
-            rect.y = (int)drawY;
-            rect.w = (int)scaleX;
-            rect.h = (int)scaleY;
-            SDL_RenderFillRect(renderer, &rect);
-        }
-    }
-}
-*/
 
 void drawPlayerSprite(SDL_Renderer *renderer, int x, int y)
 {
@@ -845,32 +642,6 @@ int main(int argc, char *argv[])
     }
 
     // Labirynt 1 (1=ściana, 0=ścieżka, 5=życie, 4 - złoto, 3 - złoto podwójne)
-    std::vector<std::vector<int>> maze2 = {
-        {5, 5, 5, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1},
-        {1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1},
-        {1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1},
-        {1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1},
-        {1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1},
-        {1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1},
-        {1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1},
-        {1, 0, 0, 0, 0, 4, 3, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1},
-        {1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1},
-        {1, 0, 0, 0, 0, 4, 3, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1},
-        {1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1},
-        {1, 0, 0, 0, 0, 4, 3, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1},
-        {1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1},
-        {1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1},
-        {1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1},
-        {1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1},
-        {1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1},
-        {1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
-    // Labirynt 1 (1=ściana, 0=ścieżka, 5=życie, 4 - złoto, 3 - złoto podwójne)
     std::vector<std::vector<int>> maze = {
 
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1},
@@ -901,15 +672,15 @@ int main(int argc, char *argv[])
     };
 
     // Startowa pozycja (wycentrowana w kafelku 19,1)
-    posX = 19.0f * CELL_SIZE + (CELL_SIZE - PLAYER_WIDTH) / 2.0f;
-    posY = 1.0f * CELL_SIZE + (CELL_SIZE - PLAYER_HEIGHT) / 2.0f;
+    posPlayerX = 19.0f * CELL_SIZE + (CELL_SIZE - PLAYER_WIDTH) / 2.0f;
+    posPlayerY = 1.0f * CELL_SIZE + (CELL_SIZE - PLAYER_HEIGHT) / 2.0f;
 
-    posXstart = 19.0f * CELL_SIZE + (CELL_SIZE - GOLD_WIDTH) / 2.0f;
-    posYstart = 0.0f * CELL_SIZE + (CELL_SIZE - GOLD_HEIGHT) / 2.0f;
+    posStartX = 19.0f * CELL_SIZE + (CELL_SIZE - GOLD_WIDTH) / 2.0f;
+    posStartY = 0.0f * CELL_SIZE + (CELL_SIZE - GOLD_HEIGHT) / 2.0f;
 
     // Początkowo stoimy w miejscu
-    targetPosX = posX;
-    targetPosY = posY;
+    targetPlayerPosX = posPlayerX;
+    targetPlayerPosY = posPlayerY;
 
     bool running = true;
     SDL_Event event;
@@ -926,14 +697,14 @@ int main(int argc, char *argv[])
             else if (event.type == SDL_KEYDOWN)
             {
                 // Określamy aktualną komórkę (środek gracza)
-                int cellX = (int)((posX + PLAYER_WIDTH / 2) / CELL_SIZE);
-                int cellY = (int)((posY + PLAYER_HEIGHT / 2) / CELL_SIZE);
+                int cellX = (int)((posPlayerX + PLAYER_WIDTH / 2) / CELL_SIZE);
+                int cellY = (int)((posPlayerY + PLAYER_HEIGHT / 2) / CELL_SIZE);
 
                 if (event.key.keysym.sym == SDLK_UP || event.key.keysym.sym == SDLK_DOWN)
                 {
                     // Snapujemy w osi X (wyśrodkowujemy)
                     float centerX = cellX * CELL_SIZE + CELL_SIZE / 2.0f;
-                    posX = centerX - PLAYER_WIDTH / 2.0f;
+                    posPlayerX = centerX - PLAYER_WIDTH / 2.0f;
 
                     // Kierunek
                     dirCellX = 0;
@@ -943,7 +714,7 @@ int main(int argc, char *argv[])
                 {
                     // Snapujemy w osi Y
                     float centerY = cellY * CELL_SIZE + CELL_SIZE / 2.0f;
-                    posY = centerY - PLAYER_HEIGHT / 2.0f;
+                    posPlayerY = centerY - PLAYER_HEIGHT / 2.0f;
 
                     dirCellY = 0;
                     dirCellX = (event.key.keysym.sym == SDLK_LEFT) ? -1 : 1;
@@ -955,15 +726,15 @@ int main(int argc, char *argv[])
                 }
 
                 // Teraz obliczamy docelową komórkę
-                cellX = (int)((posX + PLAYER_WIDTH / 2) / CELL_SIZE);
-                cellY = (int)((posY + PLAYER_HEIGHT / 2) / CELL_SIZE);
+                cellX = (int)((posPlayerX + PLAYER_WIDTH / 2) / CELL_SIZE);
+                cellY = (int)((posPlayerY + PLAYER_HEIGHT / 2) / CELL_SIZE);
 
                 int tCellX, tCellY;
                 computeTargetCell(maze, cellX, cellY, dirCellX, dirCellY, tCellX, tCellY);
 
                 // Zamieniamy na piksele (też wycentrowane)
-                targetPosX = tCellX * CELL_SIZE + (CELL_SIZE - PLAYER_WIDTH) / 2.0f;
-                targetPosY = tCellY * CELL_SIZE + (CELL_SIZE - PLAYER_HEIGHT) / 2.0f;
+                targetPlayerPosX = tCellX * CELL_SIZE + (CELL_SIZE - PLAYER_WIDTH) / 2.0f;
+                targetPlayerPosY = tCellY * CELL_SIZE + (CELL_SIZE - PLAYER_HEIGHT) / 2.0f;
 
                 isMoving = true;
             }
@@ -972,21 +743,21 @@ int main(int argc, char *argv[])
         // 2) Logika płynnego ruchu
         if (isMoving)
         {
-            float dx = targetPosX - posX;
-            float dy = targetPosY - posY;
+            float dx = targetPlayerPosX - posPlayerX;
+            float dy = targetPlayerPosY - posPlayerY;
             float dist = std::sqrt(dx * dx + dy * dy);
 
             if (dist > speed)
             {
-                float stepX = posX + speed * (dx / dist);
-                float stepY = posY + speed * (dy / dist);
+                float stepX = posPlayerX + speed * (dx / dist);
+                float stepY = posPlayerY + speed * (dy / dist);
 
                 // Sprawdzamy kolizję - wąski korytarz, raczej i tak jej nie będzie,
                 // ale zostawiamy "na wszelki wypadek".
                 if (!checkCollisionWithWalls(stepX, stepY, maze))
                 {
-                    posX = stepX;
-                    posY = stepY;
+                    posPlayerX = stepX;
+                    posPlayerY = stepY;
                 }
                 else
                 {
@@ -997,13 +768,13 @@ int main(int argc, char *argv[])
             else
             {
                 // Ostatni krok
-                float stepX = targetPosX;
-                float stepY = targetPosY;
+                float stepX = targetPlayerPosX;
+                float stepY = targetPlayerPosY;
 
                 if (!checkCollisionWithWalls(stepX, stepY, maze))
                 {
-                    posX = stepX;
-                    posY = stepY;
+                    posPlayerX = stepX;
+                    posPlayerY = stepY;
                 }
                 isMoving = false;
             }
@@ -1020,8 +791,8 @@ int main(int argc, char *argv[])
 
         // 3) Sprawdzamy, czy zbieramy złoto / wejście na start
         {
-            int checkCellX = (int)((posX + PLAYER_WIDTH / 2) / CELL_SIZE);
-            int checkCellY = (int)((posY + PLAYER_HEIGHT / 2) / CELL_SIZE);
+            int checkCellX = (int)((posPlayerX + PLAYER_WIDTH / 2) / CELL_SIZE);
+            int checkCellY = (int)((posPlayerY + PLAYER_HEIGHT / 2) / CELL_SIZE);
 
             if (checkCellY >= 0 && checkCellY < (int)maze.size() &&
                 checkCellX >= 0 && checkCellX < (int)maze[checkCellY].size())
@@ -1063,8 +834,8 @@ int main(int argc, char *argv[])
                     }
                 }
                 // kolizja ze startem
-                if (checkStartBoxCollision(posX, posY, PLAYER_WIDTH, PLAYER_HEIGHT,
-                                           posXstart, posYstart, START_WIDTH, START_HEIGHT))
+                if (checkStartBoxCollision(posPlayerX, posPlayerY, PLAYER_WIDTH, PLAYER_HEIGHT,
+                                           posStartX, posStartY, START_WIDTH, START_HEIGHT))
                 {
                     if (hasGold)
                     {
@@ -1085,8 +856,8 @@ int main(int argc, char *argv[])
                 if (!pantherIsDisabled)
                 {
                     // Kolizja z panterą
-                    if (checkPantherBoxCollision(posX, posY, PLAYER_WIDTH, PLAYER_HEIGHT,
-                                                 pantherX, pantherY, PANTHER_WIDTH, PANTHER_HEIGHT))
+                    if (checkPantherBoxCollision(posPlayerX, posPlayerY, PLAYER_WIDTH, PLAYER_HEIGHT,
+                                                 posPantherX, posPantherY, PANTHER_WIDTH, PANTHER_HEIGHT))
                     {
                         if (!justCollidedWithPanther)
                         {
@@ -1115,12 +886,12 @@ int main(int argc, char *argv[])
                     }
                     /////////////////////////// ruszanie pantery
                     // Przesunięcie pantery w bieżącym kierunku
-                    pantherX += pantherSpeed * pantherDirX; // Ruch w poziomie
-                    pantherY += pantherSpeed * pantherDirY; // Ruch w pionie
+                    posPantherX += pantherSpeed * pantherDirX; // Ruch w poziomie
+                    posPantherY += pantherSpeed * pantherDirY; // Ruch w pionie
 
                     /* // Sprawdzanie kolizji z korytarzem (ścianami)
-                     int cellX = (int)(pantherX / CELL_SIZE); // Pozycja w siatce
-                     int cellY = (int)(pantherY / CELL_SIZE);
+                     int cellX = (int)(posPantherX / CELL_SIZE); // Pozycja w siatce
+                     int cellY = (int)(posPantherY / CELL_SIZE);
 
                      // Jeśli pantera napotka ścianę, zmień kierunek
                      if (maze[cellY][cellX] == 1) { // 1 = ściana
@@ -1134,17 +905,17 @@ int main(int argc, char *argv[])
                     ////////////////////////////////////////// koniec ruszanie pantery
 
                     // Jeśli pantera napotka ścianę, zmień kierunek
-                    if (checkPantherCollisionWithWalls(pantherX, pantherY, maze))
+                    if (checkPantherCollisionWithWalls(posPantherX, posPantherY, maze))
                     {
                         if (pantherDirX != 0)
-                        {                                           // Porusza się w poziomie
-                            pantherDirX *= -1;                      // Zmiana kierunku na osi X
-                            pantherX += pantherSpeed * pantherDirX; // Cofnięcie o krok
+                        {                                              // Porusza się w poziomie
+                            pantherDirX *= -1;                         // Zmiana kierunku na osi X
+                            posPantherX += pantherSpeed * pantherDirX; // Cofnięcie o krok
                         }
                         else if (pantherDirY != 0)
-                        {                                           // Porusza się w pionie
-                            pantherDirY *= -1;                      // Zmiana kierunku na osi Y
-                            pantherY += pantherSpeed * pantherDirY; // Cofnięcie o krok
+                        {                                              // Porusza się w pionie
+                            pantherDirY *= -1;                         // Zmiana kierunku na osi Y
+                            posPantherY += pantherSpeed * pantherDirY; // Cofnięcie o krok
                         }
                     }
                 }
@@ -1194,28 +965,28 @@ int main(int argc, char *argv[])
         // sprawdzamy, czy gracz idzie w lewo, prawo, górę, dół
         if (!isMoving)
         {
-            drawPlayerSprite(renderer, posX, posY);
+            drawPlayerSprite(renderer, posPlayerX, posPlayerY);
         }
         else if (dirCellX == 1)
         {
-            drawPlayerSpriteRight(renderer, posX, posY);
+            drawPlayerSpriteRight(renderer, posPlayerX, posPlayerY);
         }
         else if (dirCellX == -1)
         {
-            drawPlayerSpriteLeft(renderer, posX, posY);
+            drawPlayerSpriteLeft(renderer, posPlayerX, posPlayerY);
         }
         else if (dirCellY == 1)
         {
-            drawPlayerSpriteDown(renderer, posX, posY);
+            drawPlayerSpriteDown(renderer, posPlayerX, posPlayerY);
         }
         else if (dirCellY == -1)
         {
-            drawPlayerSprite(renderer, posX, posY);
+            drawPlayerSprite(renderer, posPlayerX, posPlayerY);
             //} else {
-            // drawPlayerSprite(renderer, posX, posY);
+            // drawPlayerSprite(renderer, posPlayerX, posPlayerY);
         }
         // Rysowanie pantery
-        drawPantherSprite(renderer, pantherX, pantherY, pantherIsDisabled);
+        drawPantherSprite(renderer, posPantherX, posPantherY, pantherIsDisabled);
 
         drawStartSprite(renderer, 19 * CELL_SIZE, 0 * CELL_SIZE);
         // Wyświetlanie
