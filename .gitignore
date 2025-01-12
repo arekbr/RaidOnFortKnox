@@ -31,8 +31,16 @@
 *.out
 *.app
 
+# python
+*.py
+
+# tekst
+*.txt
+
 #binarka
 raid_on_fort_knox
 
 # katalog vscone 
 .vscode
+release
+
